@@ -1,26 +1,28 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
+/* Tailwind v4: la configuración del tema vive aquí (equivale a theme.extend en tailwind.config.ts). */
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  /* Paleta oficial DLC */
+  --color-dlc-negro: #16140f;
+  --color-dlc-marfil: #f4efe5;
+  --color-dlc-arena: #eae2d3;
+  --color-dlc-cuero: #7a4524;
+  --color-dlc-oro: #c9a45c;
+
+  /* Tipografía oficial: Zilla Slab (títulos) y DM Sans (texto) */
+  --font-sans: var(--font-dm);
+  --font-serif: var(--font-zilla);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+/* Cursor de marca (components/CustomCursor.tsx). Misma condición para mostrar el punto
+   y ocultar el cursor nativo: así nunca se queda la pantalla sin puntero. */
+@media (min-width: 48rem) and (hover: hover) and (pointer: fine) {
+  .cursor-dot {
+    display: block;
   }
-}
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  body.custom-cursor,
+  body.custom-cursor * {
+    cursor: none !important;
+  }
 }
