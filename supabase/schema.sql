@@ -14,23 +14,31 @@ alter table if exists public.horses rename to horses_backup;
 -- Una versión anterior de "caballos" (con created_at, padre_nombre, etc.) no es
 -- compatible con esta: se aparta como caballos_v1_backup en vez de borrarla.
 -- Se reconoce porque no tiene la columna creado_en.
+-- Si ese nombre ya está ocupado por un respaldo anterior, se usa caballos_v1_backup_2, _3…
 do $$
 declare
   idx record;
+  respaldo text := 'caballos_v1_backup';
+  n int := 1;
 begin
   if to_regclass('public.caballos') is not null
      and not exists (
        select 1 from information_schema.columns
        where table_schema = 'public' and table_name = 'caballos' and column_name = 'creado_en'
      ) then
-    alter table public.caballos rename to caballos_v1_backup;
+    while to_regclass('public.' || respaldo) is not null loop
+      n := n + 1;
+      respaldo := 'caballos_v1_backup_' || n;
+    end loop;
+    execute format('alter table public.caballos rename to %I', respaldo);
+    execute format('revoke all on public.%I from anon, authenticated', respaldo);
     -- Los índices (p. ej. caballos_pkey) conservan su nombre al renombrar la tabla
     -- y chocarían con los de la tabla nueva.
     for idx in
       select indexname from pg_indexes
-      where schemaname = 'public' and tablename = 'caballos_v1_backup'
+      where schemaname = 'public' and tablename = respaldo
     loop
-      execute format('alter index public.%I rename to %I', idx.indexname, 'v1_' || idx.indexname);
+      execute format('alter index public.%I rename to %I', idx.indexname, respaldo || '_' || idx.indexname);
     end loop;
   end if;
 end $$;
@@ -340,7 +348,7 @@ create policy "Web: leer equipo"
 -- Primera ficha: la fotógrafa (solo si aún no hay nadie en Fotografía; después
 -- se edita desde /admin/equipo).
 insert into public.equipo (nombre, puesto, area, foto_url, bio, orden)
-select 'Fotógrafa DLC', 'Fotógrafa', 'fotografia', '/equipo/fotografa.jpg',
+select 'Viviana Padilla', 'Fotógrafa', 'fotografia', '/equipo/fotografa.jpg',
        'La mejor. Cada imagen de nuestros caballos lleva su mirada.', 0
 where not exists (select 1 from public.equipo where area = 'fotografia');
 
