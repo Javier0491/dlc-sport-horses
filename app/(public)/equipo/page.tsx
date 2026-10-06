@@ -5,6 +5,7 @@ import Reveal from "@/components/Reveal";
 import { getEquipoPublico, type MiembroPublico } from "@/lib/data";
 import { AREAS, iniciales } from "@/lib/equipo-types";
 import { isAllowedImageUrl } from "@/lib/image-url";
+import { delay } from "@/lib/motion";
 
 export const metadata: Metadata = {
   title: "Nuestro Equipo | Rancho DLC",
@@ -56,12 +57,17 @@ export default async function Equipo() {
   return (
     <main className="flex-1 bg-dlc-marfil px-6 pt-40 pb-32">
       <div className="mx-auto flex max-w-3xl flex-col items-center text-center">
-        <p className="text-[11px] uppercase tracking-[0.5em] text-dlc-cuero">Rancho DLC</p>
-        <h1 className="mt-5 font-serif text-5xl font-light text-dlc-negro sm:text-7xl">
+        <p className="enter text-[11px] uppercase tracking-[0.5em] text-dlc-cuero" style={delay(50)}>
+          Rancho DLC
+        </p>
+        <h1
+          className="enter mt-5 font-serif text-5xl font-light text-dlc-negro sm:text-7xl"
+          style={delay(150)}
+        >
           Nuestro Equipo
         </h1>
-        <span className="mt-8 h-px w-16 bg-dlc-oro" />
-        <p className="mt-8 max-w-xl leading-8 text-dlc-negro/70">
+        <span className="enter-line mt-8 h-px w-16 bg-dlc-oro" style={delay(450)} />
+        <p className="enter mt-8 max-w-xl leading-8 text-dlc-negro/70" style={delay(550)}>
           Las personas detrás de cada caballo: quienes dirigen el rancho, quienes cuidan su salud
           y quien captura su historia.
         </p>
@@ -99,7 +105,7 @@ export default async function Equipo() {
           </p>
           <Link
             href="/contacto"
-            className="mt-10 bg-dlc-negro px-8 py-4 text-xs uppercase tracking-[0.3em] text-dlc-marfil transition-colors duration-500 hover:bg-dlc-cuero"
+            className="press mt-10 bg-dlc-negro px-8 py-4 text-xs uppercase tracking-[0.3em] text-dlc-marfil hover:bg-dlc-cuero"
           >
             Contactar
           </Link>

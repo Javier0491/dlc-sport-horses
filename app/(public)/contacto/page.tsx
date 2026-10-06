@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import ContactForm from "@/components/ContactForm";
 import { horseArticle } from "@/lib/catalog";
 import { getEnVenta } from "@/lib/data";
+import { delay } from "@/lib/motion";
 
 export const metadata: Metadata = {
   title: "Contacto | Rancho DLC",
@@ -52,14 +53,17 @@ export default async function Contacto({
     <main className="flex-1 bg-dlc-marfil px-6 pt-40 pb-24 sm:pt-48">
       <div className="mx-auto grid max-w-6xl gap-16 lg:grid-cols-2 lg:gap-24">
         <section>
-          <p className="text-[11px] uppercase tracking-[0.5em] text-dlc-cuero">
+          <p className="enter text-[11px] uppercase tracking-[0.5em] text-dlc-cuero" style={delay(50)}>
             Contacto
           </p>
-          <h1 className="mt-5 font-serif text-5xl font-light leading-tight text-dlc-negro sm:text-6xl">
+          <h1
+            className="enter mt-5 font-serif text-5xl font-light leading-tight text-dlc-negro sm:text-6xl"
+            style={delay(150)}
+          >
             Hablemos de Excelencia
           </h1>
-          <span className="mt-8 block h-px w-16 bg-dlc-oro" />
-          <p className="mt-8 max-w-md leading-8 text-dlc-negro/70">
+          <span className="enter-line mt-8 block h-px w-16 origin-left bg-dlc-oro" style={delay(450)} />
+          <p className="enter mt-8 max-w-md leading-8 text-dlc-negro/70" style={delay(550)}>
             Ya sea para conocer a nuestros sementales y potros, agendar una visita o
             consultar al Centro Médico, nuestro equipo te atenderá
             personalmente.

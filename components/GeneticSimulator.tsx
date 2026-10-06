@@ -568,7 +568,7 @@ export default function GeneticSimulator({
             </p>
             <Link
               href="/contacto"
-              className="mt-8 bg-dlc-negro px-8 py-4 text-xs uppercase tracking-[0.3em] text-dlc-marfil transition-colors duration-500 hover:bg-dlc-cuero"
+              className="press mt-8 bg-dlc-negro px-8 py-4 text-xs uppercase tracking-[0.3em] text-dlc-marfil hover:bg-dlc-cuero"
             >
               Hablar con un especialista
             </Link>

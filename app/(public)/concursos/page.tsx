@@ -7,6 +7,7 @@ import { getConcursosPublicos, getConfiguracion, type ConcursoPublico } from "@/
 import { isAllowedImageUrl } from "@/lib/image-url";
 import { parseVideo } from "@/lib/video";
 import VideoPlayer from "@/components/VideoPlayer";
+import { delay } from "@/lib/motion";
 
 // Transmisión de un concurso, solo si es de YouTube o Vimeo.
 const streamOf = (c: ConcursoPublico) => {
@@ -196,13 +197,16 @@ export default async function Concursos() {
   return (
     <main className="flex-1 bg-dlc-marfil px-6 pt-40 pb-32">
       <div className="mx-auto flex max-w-3xl flex-col items-center text-center">
-        <p className="text-[11px] uppercase tracking-[0.5em] text-dlc-cuero">
+        <p className="enter text-[11px] uppercase tracking-[0.5em] text-dlc-cuero" style={delay(50)}>
           Calendario
         </p>
-        <h1 className="mt-5 font-serif text-5xl font-light text-dlc-negro sm:text-7xl">
+        <h1
+          className="enter mt-5 font-serif text-5xl font-light text-dlc-negro sm:text-7xl"
+          style={delay(150)}
+        >
           {eventos?.titulo || POR_DEFECTO.eventos.titulo}
         </h1>
-        <span className="mt-8 h-px w-16 bg-dlc-oro" />
+        <span className="enter-line mt-8 h-px w-16 bg-dlc-oro" style={delay(450)} />
         {eventos?.subtitulo && (
           <p className="mt-8 font-serif text-lg italic text-dlc-cuero">{eventos.subtitulo}</p>
         )}
@@ -252,7 +256,7 @@ export default async function Concursos() {
           </p>
           <Link
             href="/contacto"
-            className="mt-10 bg-dlc-negro px-8 py-4 text-xs uppercase tracking-[0.3em] text-dlc-marfil transition-colors duration-500 hover:bg-dlc-cuero"
+            className="press mt-10 bg-dlc-negro px-8 py-4 text-xs uppercase tracking-[0.3em] text-dlc-marfil hover:bg-dlc-cuero"
           >
             Contactar
           </Link>

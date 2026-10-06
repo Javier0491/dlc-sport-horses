@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import Reveal from "@/components/Reveal";
+import { delay } from "@/lib/motion";
 
 export const metadata: Metadata = {
   title: "Centro Médico Equino | Rancho DLC",
@@ -39,23 +41,30 @@ export default function CentroMedico() {
     <main className="flex-1">
       {/* Hero */}
       <section className="relative h-[60vh] min-h-[420px] w-full overflow-hidden bg-dlc-negro">
-        <div
-          className="absolute inset-0 bg-cover bg-center"
-          style={{ backgroundImage: `url(${HERO_IMAGE_SRC})` }}
-          aria-hidden="true"
-        />
+        <div className="parallax absolute inset-0" aria-hidden="true">
+          <div
+            className="enter-photo absolute inset-0 bg-cover bg-center"
+            style={{ backgroundImage: `url(${HERO_IMAGE_SRC})` }}
+          />
+        </div>
         <div className="absolute inset-0 bg-dlc-negro/50" />
         <div className="absolute inset-0 bg-gradient-to-t from-dlc-negro/70 via-transparent to-transparent" />
 
-        <div className="relative z-10 flex h-full flex-col items-center justify-center px-6 pt-24 text-center">
-          <p className="text-[11px] uppercase tracking-[0.5em] text-dlc-oro">
+        <div className="hero-out relative z-10 flex h-full flex-col items-center justify-center px-6 pt-24 text-center">
+          <p className="enter text-[11px] uppercase tracking-[0.5em] text-dlc-oro" style={delay(100)}>
             Rancho DLC
           </p>
-          <h1 className="mt-6 font-serif text-4xl font-light tracking-[0.04em] text-dlc-marfil sm:text-6xl lg:text-7xl">
+          <h1
+            className="enter mt-6 font-serif text-4xl font-light tracking-[0.04em] text-dlc-marfil sm:text-6xl lg:text-7xl"
+            style={delay(200)}
+          >
             Centro Médico Equino
           </h1>
-          <span className="mt-8 h-px w-16 bg-dlc-oro" />
-          <p className="mt-8 max-w-2xl text-sm font-light uppercase leading-7 tracking-[0.2em] text-dlc-marfil/85 sm:text-base">
+          <span className="enter-line mt-8 h-px w-16 bg-dlc-oro" style={delay(500)} />
+          <p
+            className="enter mt-8 max-w-2xl text-sm font-light uppercase leading-7 tracking-[0.2em] text-dlc-marfil/85 sm:text-base"
+            style={delay(650)}
+          >
             Tecnología, ciencia y bienestar al servicio del alto rendimiento
           </p>
         </div>
@@ -71,7 +80,7 @@ export default function CentroMedico() {
             <h2 className="mt-4 font-serif text-3xl font-medium leading-tight sm:text-4xl">
               La salud es el origen de todo gran desempeño.
             </h2>
-            <span className="mt-8 block h-px w-12 bg-dlc-oro" />
+            <span className="rule-draw mt-8 block h-px w-12 origin-left bg-dlc-oro" />
           </div>
           <div className="space-y-6 text-base leading-8 text-dlc-negro/75 sm:text-lg">
             <p>
@@ -86,6 +95,15 @@ export default function CentroMedico() {
               tratamiento especializado con un principio innegociable: el
               bienestar del caballo por encima de todo.
             </p>
+            <Link
+              href="/equipo#medico"
+              className="group inline-flex items-center gap-3 text-xs uppercase tracking-[0.3em] text-dlc-cuero"
+            >
+              Conoce al equipo médico
+              <span className="inline-block transition-transform duration-500 ease-[var(--ease-out)] group-hover:translate-x-2">
+                →
+              </span>
+            </Link>
           </div>
         </div>
       </section>
@@ -104,21 +122,23 @@ export default function CentroMedico() {
 
           <ul className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
             {specialties.map((specialty, index) => (
-              <li
+              <Reveal
+                as="li"
                 key={specialty.title}
+                delay={index * 0.06}
                 className="group flex flex-col border border-dlc-oro/40 bg-dlc-arena p-8 font-sans transition-colors duration-500 hover:border-dlc-cuero"
               >
                 <span className="font-serif text-4xl font-light text-dlc-oro">
                   {String(index + 1).padStart(2, "0")}
                 </span>
-                <span className="mt-6 h-px w-10 bg-dlc-cuero/40 transition-all duration-500 group-hover:w-16 group-hover:bg-dlc-cuero" />
+                <span className="mt-6 h-px w-16 origin-left scale-x-[0.625] bg-dlc-cuero/40 transition-[transform,background-color] duration-500 ease-[var(--ease-out)] group-hover:scale-x-100 group-hover:bg-dlc-cuero" />
                 <h3 className="mt-6 text-lg font-medium leading-snug text-dlc-negro">
                   {specialty.title}
                 </h3>
                 <p className="mt-4 text-sm leading-7 text-dlc-negro/70">
                   {specialty.description}
                 </p>
-              </li>
+              </Reveal>
             ))}
           </ul>
         </div>
@@ -138,7 +158,7 @@ export default function CentroMedico() {
           </div>
           <Link
             href="/contacto"
-            className="shrink-0 bg-dlc-oro px-10 py-4 text-xs font-medium uppercase tracking-[0.3em] text-dlc-negro transition-colors duration-500 hover:bg-dlc-negro hover:text-dlc-marfil"
+            className="press shrink-0 bg-dlc-oro px-10 py-4 text-xs font-medium uppercase tracking-[0.3em] text-dlc-negro hover:bg-dlc-negro hover:text-dlc-marfil"
           >
             Contactar
           </Link>

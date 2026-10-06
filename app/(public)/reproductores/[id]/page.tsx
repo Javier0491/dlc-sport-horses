@@ -251,7 +251,7 @@ export default async function Semental({
               href={presaleHref}
               target="_blank"
               rel="noopener noreferrer"
-              className="mt-10 inline-block bg-dlc-oro px-10 py-4 text-xs font-medium uppercase tracking-[0.3em] text-dlc-negro transition-colors duration-500 hover:bg-dlc-marfil"
+              className="press mt-10 inline-block bg-dlc-oro px-10 py-4 text-xs font-medium uppercase tracking-[0.3em] text-dlc-negro hover:bg-dlc-marfil"
             >
               Entrar a Lista de Espera
             </a>
@@ -273,7 +273,7 @@ export default async function Semental({
           </div>
           <Link
             href={contactHref}
-            className="shrink-0 bg-dlc-oro px-10 py-4 text-xs font-medium uppercase tracking-[0.3em] text-dlc-negro transition-colors duration-500 hover:bg-dlc-negro hover:text-dlc-marfil"
+            className="press shrink-0 bg-dlc-oro px-10 py-4 text-xs font-medium uppercase tracking-[0.3em] text-dlc-negro hover:bg-dlc-negro hover:text-dlc-marfil"
           >
             Solicitar información
           </Link>

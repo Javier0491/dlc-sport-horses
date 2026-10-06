@@ -186,7 +186,7 @@ export default function ContactForm({
 
       <button
         type="submit"
-        className="w-full bg-dlc-negro py-4 text-xs font-medium uppercase tracking-[0.35em] text-dlc-marfil transition-colors duration-500 hover:bg-dlc-cuero"
+        className="press w-full bg-dlc-negro py-4 text-xs font-medium uppercase tracking-[0.35em] text-dlc-marfil hover:bg-dlc-cuero"
       >
         Enviar
       </button>

@@ -145,7 +145,7 @@ export default function StallionCatalog({
         </p>
         <Link
           href="/contacto"
-          className="mt-10 bg-dlc-negro px-8 py-4 text-xs uppercase tracking-[0.3em] text-dlc-marfil transition-colors duration-500 hover:bg-dlc-cuero"
+          className="press mt-10 bg-dlc-negro px-8 py-4 text-xs uppercase tracking-[0.3em] text-dlc-marfil hover:bg-dlc-cuero"
         >
           Contactar
         </Link>

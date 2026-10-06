@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
+import Reveal from "@/components/Reveal";
 import { POR_DEFECTO } from "@/lib/contenido-types";
 import { getConfiguracion } from "@/lib/data";
 import { isAllowedImageUrl } from "@/lib/image-url";
+import { delay } from "@/lib/motion";
 
 // Textos de la fila 'legado' de configuracion_sitio (se editan en /admin/contenido).
 async function getLegado() {
@@ -33,27 +35,36 @@ export default async function ElRancho() {
     <main className="flex-1">
       {/* Hero */}
       <section className="relative flex h-[70vh] min-h-[480px] items-end overflow-hidden bg-dlc-negro">
-        <Image
-          src={imagen}
-          alt={titulo}
-          fill
-          sizes="100vw"
-          loading="eager"
-          fetchPriority="high"
-          className="object-cover object-center"
-        />
+        <div className="parallax absolute inset-0">
+          <div className="enter-photo absolute inset-0">
+            <Image
+              src={imagen}
+              alt={titulo}
+              fill
+              sizes="100vw"
+              loading="eager"
+              fetchPriority="high"
+              className="object-cover object-center"
+            />
+          </div>
+        </div>
         <div className="absolute inset-0 bg-dlc-negro/40" />
         <div className="absolute inset-0 bg-gradient-to-t from-dlc-negro/90 via-dlc-negro/20 to-transparent" />
 
-        <div className="relative z-10 mx-auto w-full max-w-7xl px-6 pb-14">
-          <p className="text-[11px] uppercase tracking-[0.5em] text-dlc-oro">
+        <div className="hero-out relative z-10 mx-auto w-full max-w-7xl px-6 pb-14">
+          <p className="enter text-[11px] uppercase tracking-[0.5em] text-dlc-oro" style={delay(100)}>
             El Rancho · La Chacona
           </p>
-          <h1 className="mt-5 font-serif text-5xl font-light tracking-[0.02em] text-dlc-marfil sm:text-7xl">
+          <h1
+            className="enter mt-5 font-serif text-5xl font-light tracking-[0.02em] text-dlc-marfil sm:text-7xl"
+            style={delay(200)}
+          >
             {titulo}
           </h1>
-          <span className="mt-7 block h-px w-16 bg-dlc-oro" />
-          <p className="mt-7 font-serif text-lg italic text-dlc-oro sm:text-xl">{subtitulo}</p>
+          <span className="enter-line mt-7 block h-px w-16 origin-left bg-dlc-oro" style={delay(500)} />
+          <p className="enter mt-7 font-serif text-lg italic text-dlc-oro sm:text-xl" style={delay(650)}>
+            {subtitulo}
+          </p>
         </div>
       </section>
 
@@ -61,7 +72,8 @@ export default async function ElRancho() {
       <section className="bg-dlc-marfil px-6 py-24 sm:py-32">
         <div className="mx-auto max-w-3xl space-y-8">
           {parrafos.map((parrafo, i) => (
-            <p
+            <Reveal
+              as="p"
               key={i}
               className={
                 i === 0
@@ -70,7 +82,7 @@ export default async function ElRancho() {
               }
             >
               {parrafo}
-            </p>
+            </Reveal>
           ))}
         </div>
       </section>
@@ -83,7 +95,7 @@ export default async function ElRancho() {
           </h2>
           <Link
             href="/contacto"
-            className="shrink-0 bg-dlc-oro px-10 py-4 text-xs font-medium uppercase tracking-[0.3em] text-dlc-negro transition-colors duration-500 hover:bg-dlc-negro hover:text-dlc-marfil"
+            className="press shrink-0 bg-dlc-oro px-10 py-4 text-xs font-medium uppercase tracking-[0.3em] text-dlc-negro hover:bg-dlc-negro hover:text-dlc-marfil"
           >
             Agendar una visita
           </Link>

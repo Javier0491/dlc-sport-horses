@@ -1,10 +1,12 @@
 import Image from "next/image";
 import Link from "next/link";
+import Marquee from "@/components/Marquee";
 import Reveal from "@/components/Reveal";
 import { DISCIPLINE } from "@/lib/catalog";
 import { POR_DEFECTO } from "@/lib/contenido-types";
 import { getConfiguracion, getSementalesActivos } from "@/lib/data";
 import { isAllowedImageUrl } from "@/lib/image-url";
+import { delay } from "@/lib/motion";
 
 // Pendiente: reactivar el <video> cuando exista (ej. /videos/hero.mp4 en /public).
 // const HERO_VIDEO_SRC = "/videos/hero.mp4";
@@ -81,28 +83,42 @@ export default async function Home() {
           preload="auto"
           aria-hidden="true"
         /> */}
-        <Image
-          src={heroImage}
-          alt=""
-          fill
-          sizes="100vw"
-          loading="eager"
-          fetchPriority="high"
-          className="object-cover object-center"
-        />
+        {/* Parallax al hacer scroll (exterior) y zoom lento al cargar (interior). */}
+        <div className="parallax absolute inset-0">
+          <div className="enter-photo absolute inset-0">
+            <Image
+              src={heroImage}
+              alt=""
+              fill
+              sizes="100vw"
+              loading="eager"
+              fetchPriority="high"
+              className="object-cover object-center"
+            />
+          </div>
+        </div>
         <div className="absolute inset-0 bg-dlc-negro/50" />
         <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-transparent to-black/60" />
 
-        <div className="relative z-10 flex h-full flex-col items-center justify-center px-6 text-center">
-          <h1 className="font-serif text-5xl font-light tracking-[0.08em] text-dlc-marfil sm:text-7xl lg:text-8xl">
+        <div className="hero-out relative z-10 flex h-full flex-col items-center justify-center px-6 text-center">
+          <h1
+            className="enter font-serif text-5xl font-light tracking-[0.08em] text-dlc-marfil sm:text-7xl lg:text-8xl"
+            style={delay(150)}
+          >
             {portada?.titulo || POR_DEFECTO.portada.titulo}
           </h1>
-          <span className="mt-8 h-px w-16 bg-dlc-oro" />
-          <p className="mt-8 max-w-xl text-sm font-light uppercase leading-7 tracking-[0.25em] text-dlc-marfil/85 sm:text-base">
+          <span className="enter-line mt-8 h-px w-24 bg-dlc-oro" style={delay(550)} />
+          <p
+            className="enter mt-8 max-w-xl text-sm font-light uppercase leading-7 tracking-[0.25em] text-dlc-marfil/85 sm:text-base"
+            style={delay(700)}
+          >
             {portada?.subtitulo || POR_DEFECTO.portada.subtitulo}
           </p>
           {portada?.descripcion && (
-            <p className="mt-5 max-w-lg text-sm font-light leading-7 text-dlc-marfil/70 sm:text-base">
+            <p
+              className="enter mt-5 max-w-lg text-sm font-light leading-7 text-dlc-marfil/70 sm:text-base"
+              style={delay(850)}
+            >
               {portada.descripcion}
             </p>
           )}
@@ -110,14 +126,17 @@ export default async function Home() {
 
         <a
           href="#pilares"
-          className="absolute inset-x-0 bottom-10 z-10 mx-auto flex w-fit flex-col items-center gap-3 text-dlc-marfil/60 transition-colors hover:text-dlc-oro"
+          className="enter absolute inset-x-0 bottom-10 z-10 mx-auto flex w-fit flex-col items-center gap-3 text-dlc-marfil/60 transition-colors hover:text-dlc-oro"
+          style={delay(1300)}
         >
           <span className="text-[10px] uppercase tracking-[0.4em]">
             Descubrir
           </span>
-          <span className="h-10 w-px animate-pulse bg-dlc-marfil/50" />
+          <span className="scroll-cue relative h-12 w-px overflow-hidden bg-dlc-marfil/25" />
         </a>
       </section>
+
+      <Marquee />
 
       {/* Pilares de Excelencia */}
       <section id="pilares" className="bg-dlc-marfil px-6 py-24 sm:py-32">
@@ -129,17 +148,22 @@ export default async function Home() {
             <h2 className="mt-5 font-serif text-4xl font-light text-dlc-negro sm:text-5xl">
               Pilares de Excelencia
             </h2>
-            <span className="mt-7 h-px w-16 bg-dlc-oro" />
+            <span className="rule-draw mt-7 h-px w-16 bg-dlc-oro" />
           </div>
 
           <div className="mt-16 grid grid-cols-1 gap-6 md:grid-cols-3">
             {pillars.map((pillar, i) => (
-              <Reveal key={pillar.title} delay={i * 0.15} className="flex">
+              <Reveal key={pillar.title} delay={i * 0.08} className="flex">
                 <Link
                   href={pillar.href}
-                  className="group flex flex-1 flex-col border border-dlc-negro/10 bg-white p-10 font-sans transition-colors duration-500 hover:border-dlc-oro"
+                  className="press group relative isolate flex flex-1 flex-col overflow-hidden border border-dlc-negro/10 bg-white p-10 font-sans hover:border-dlc-oro"
                 >
-                  <span className="flex h-14 w-14 items-center justify-center border border-dlc-oro text-dlc-cuero">
+                  {/* Al pasar el ratón, el fondo negro sube desde abajo y el texto se invierte. */}
+                  <span
+                    aria-hidden="true"
+                    className="absolute inset-0 -z-10 origin-bottom scale-y-0 bg-dlc-negro transition-transform duration-500 ease-[var(--ease-out)] group-hover:scale-y-100"
+                  />
+                  <span className="flex h-14 w-14 items-center justify-center border border-dlc-oro text-dlc-cuero transition-colors duration-500 group-hover:bg-dlc-oro group-hover:text-dlc-negro">
                     <svg
                       viewBox="0 0 24 24"
                       className="h-6 w-6"
@@ -153,15 +177,15 @@ export default async function Home() {
                       {pillar.icon}
                     </svg>
                   </span>
-                  <h3 className="mt-8 font-serif text-2xl font-medium text-dlc-negro">
+                  <h3 className="mt-8 font-serif text-2xl font-medium text-dlc-negro transition-colors duration-500 group-hover:text-dlc-marfil">
                     {pillar.title}
                   </h3>
-                  <p className="mt-4 text-sm leading-7 text-dlc-negro/70">
+                  <p className="mt-4 text-sm leading-7 text-dlc-negro/70 transition-colors duration-500 group-hover:text-dlc-marfil/70">
                     {pillar.text}
                   </p>
-                  <span className="mt-auto pt-8 text-xs uppercase tracking-[0.3em] text-dlc-cuero">
+                  <span className="mt-auto pt-8 text-xs uppercase tracking-[0.3em] text-dlc-cuero transition-colors duration-500 group-hover:text-dlc-oro">
                     Descubrir más{" "}
-                    <span className="inline-block transition-transform duration-500 group-hover:translate-x-1">
+                    <span className="inline-block transition-transform duration-500 ease-[var(--ease-out)] group-hover:translate-x-2">
                       →
                     </span>
                   </span>
@@ -194,7 +218,7 @@ export default async function Home() {
             <h2 className="mt-5 font-serif text-4xl font-light text-dlc-marfil sm:text-6xl">
               La Joya de la Corona
             </h2>
-            <span className="mt-8 h-px w-16 bg-dlc-oro" />
+            <span className="rule-draw mt-8 h-px w-16 bg-dlc-oro" />
             <p className="mt-8 font-serif text-2xl text-dlc-marfil">
               {featured.name}
               <span className="ml-3 font-sans text-xs uppercase tracking-[0.3em] text-dlc-marfil/50">
@@ -210,7 +234,7 @@ export default async function Home() {
             <div className="mt-10 flex flex-wrap items-center gap-8">
               <Link
                 href="/reproductores"
-                className="bg-dlc-oro px-10 py-4 text-xs font-medium uppercase tracking-[0.3em] text-dlc-negro transition-colors duration-500 hover:bg-dlc-marfil"
+                className="press bg-dlc-oro px-10 py-4 text-xs font-medium uppercase tracking-[0.3em] text-dlc-negro hover:bg-dlc-marfil"
               >
                 Ver catálogo
               </Link>
@@ -236,7 +260,7 @@ export default async function Home() {
               {legado.titulo}
             </h2>
           )}
-          <span className="mt-8 h-px w-16 bg-dlc-oro" />
+          <span className="rule-draw mt-8 h-px w-16 bg-dlc-oro" />
           <p className="mt-12 whitespace-pre-line font-serif text-2xl font-light leading-relaxed text-dlc-negro sm:text-3xl sm:leading-relaxed">
             {legado?.descripcion || POR_DEFECTO.legado.descripcion}
           </p>

@@ -4,6 +4,7 @@ import Link from "next/link";
 import FoalCatalog from "@/components/FoalCatalog";
 import { FOAL_FILTER_PARAMS, bloodlines, type FoalFilters } from "@/lib/catalog";
 import { getPotrosActivos } from "@/lib/data";
+import { delay } from "@/lib/motion";
 
 export const metadata: Metadata = {
   title: "Catálogo de Potros | Rancho DLC",
@@ -28,27 +29,34 @@ export default async function Potros({ searchParams }: PageProps<"/potros">) {
     <main className="flex-1">
       {/* Hero */}
       <section className="relative flex h-[70vh] min-h-[480px] items-end overflow-hidden bg-dlc-negro">
-        <Image
-          src="/rancho/manada.jpg"
-          alt="Potros de Rancho DLC en manada"
-          fill
-          sizes="100vw"
-          loading="eager"
-          fetchPriority="high"
-          className="object-cover object-center"
-        />
+        <div className="parallax absolute inset-0">
+          <div className="enter-photo absolute inset-0">
+            <Image
+              src="/rancho/manada.jpg"
+              alt="Potros de Rancho DLC en manada"
+              fill
+              sizes="100vw"
+              loading="eager"
+              fetchPriority="high"
+              className="object-cover object-center"
+            />
+          </div>
+        </div>
         <div className="absolute inset-0 bg-dlc-negro/45" />
         <div className="absolute inset-0 bg-gradient-to-t from-dlc-negro/90 via-dlc-negro/20 to-transparent" />
 
-        <div className="relative z-10 mx-auto w-full max-w-7xl px-6 pb-14">
-          <p className="text-[11px] uppercase tracking-[0.5em] text-dlc-oro">
+        <div className="hero-out relative z-10 mx-auto w-full max-w-7xl px-6 pb-14">
+          <p className="enter text-[11px] uppercase tracking-[0.5em] text-dlc-oro" style={delay(100)}>
             DLC Sport Horses · La Chacona
           </p>
-          <h1 className="mt-5 font-serif text-5xl font-light tracking-[0.02em] text-dlc-marfil sm:text-7xl">
+          <h1
+            className="enter mt-5 font-serif text-5xl font-light tracking-[0.02em] text-dlc-marfil sm:text-7xl"
+            style={delay(200)}
+          >
             Catálogo de Potros
           </h1>
-          <span className="mt-7 block h-px w-16 bg-dlc-oro" />
-          <p className="mt-7 max-w-2xl leading-8 text-dlc-marfil/80">
+          <span className="enter-line mt-7 block h-px w-16 origin-left bg-dlc-oro" style={delay(500)} />
+          <p className="enter mt-7 max-w-2xl leading-8 text-dlc-marfil/80" style={delay(650)}>
             Nuestros potros crecen en manada, desarrollando de forma natural el
             equilibrio, la confianza y las habilidades sociales que serán la
             base de su futuro como caballos deportivos.
@@ -85,13 +93,13 @@ export default async function Potros({ searchParams }: PageProps<"/potros">) {
         />
       ) : (
         <div className="mx-auto flex max-w-3xl flex-col items-center px-6 py-32 text-center">
-          <span className="h-px w-16 bg-dlc-oro" />
+          <span className="rule-draw h-px w-16 bg-dlc-oro" />
           <p className="mt-10 font-serif text-3xl font-light text-dlc-negro">
             Muy pronto presentaremos nuestros potros.
           </p>
           <Link
             href="/contacto"
-            className="mt-10 bg-dlc-negro px-8 py-4 text-xs uppercase tracking-[0.3em] text-dlc-marfil transition-colors duration-500 hover:bg-dlc-cuero"
+            className="press mt-10 bg-dlc-negro px-8 py-4 text-xs uppercase tracking-[0.3em] text-dlc-marfil hover:bg-dlc-cuero"
           >
             Contactar
           </Link>
