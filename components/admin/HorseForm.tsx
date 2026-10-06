@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { startTransition, useActionState, useState } from "react";
 import type { HorseFormState } from "@/app/(admin)/admin/actions";
@@ -10,7 +9,10 @@ import {
   type Caballo,
   type CaballoOpcion,
 } from "@/lib/caballos-types";
-import { isAllowedImageUrl } from "@/lib/image-url";
+import { hintClass, inputClass, labelClass } from "./form-styles";
+import GalleryEditor from "./GalleryEditor";
+import ImagePreview from "./ImagePreview";
+import VideoField from "./VideoField";
 
 type Props = {
   action: (prev: HorseFormState, formData: FormData) => Promise<HorseFormState>;
@@ -20,10 +22,6 @@ type Props = {
 
 const INITIAL: HorseFormState = { error: null };
 
-const inputClass =
-  "mt-1.5 w-full rounded-md border border-dlc-arena bg-white px-3 py-2 text-sm outline-none transition-colors focus:border-dlc-cuero focus:ring-2 focus:ring-dlc-oro/30";
-const labelClass = "block text-sm font-medium text-dlc-negro";
-const hintClass = "mt-1 text-xs text-neutral-500";
 
 function Field({
   label,
@@ -54,35 +52,11 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   );
 }
 
-function ImagePreview({ url, alt }: { url: string; alt: string }) {
-  const [failedUrl, setFailedUrl] = useState<string | null>(null);
-  const value = url.trim();
-
-  let message: string | null = null;
-  if (!value) message = "Sin foto";
-  else if (!isAllowedImageUrl(value)) message = "Enlace no válido: cópialo desde Medios";
-  else if (failedUrl === value) message = "No se pudo cargar la imagen";
-
-  return (
-    <div className="relative mt-3 flex aspect-[4/3] w-full items-center justify-center overflow-hidden rounded-md border border-dashed border-dlc-arena bg-white text-xs text-neutral-400">
-      {message ?? (
-        <Image
-          src={value}
-          alt={alt}
-          fill
-          unoptimized
-          className="object-cover"
-          onError={() => setFailedUrl(value)}
-        />
-      )}
-    </div>
-  );
-}
-
 export default function HorseForm({ action, caballo, opciones }: Props) {
   const [state, formAction, pending] = useActionState(action, INITIAL);
   const [imagen, setImagen] = useState(caballo?.imagen_url ?? "");
   const [retrato, setRetrato] = useState(caballo?.retrato_url ?? "");
+  const [preventa, setPreventa] = useState(caballo?.preventa_activa ?? false);
 
   // Enviar sin pasar `action` al <form>: así React no vacía los campos si hay un error.
   const onSubmit = (event: React.FormEvent<HTMLFormElement>) => {
@@ -92,6 +66,7 @@ export default function HorseForm({ action, caballo, opciones }: Props) {
   };
 
   const parents = opciones.filter((o) => o.id !== caballo?.id);
+  const mares = opciones.filter((o) => o.categoria === "Yegua");
   const parentOptions = parents.map((o) => (
     <option key={o.id} value={o.id}>
       {o.nombre}
@@ -211,6 +186,18 @@ export default function HorseForm({ action, caballo, opciones }: Props) {
             className={inputClass}
           />
         </Field>
+        <Field
+          label="Nivel actual"
+          hint="Aparece en la progenie de sus padres: 1.30 m, Jóvenes caballos…"
+        >
+          <input
+            name="nivel"
+            maxLength={40}
+            defaultValue={caballo?.nivel ?? ""}
+            placeholder="1.30 m"
+            className={inputClass}
+          />
+        </Field>
         <label className="flex items-center gap-2 text-sm sm:col-span-2">
           <input
             type="checkbox"
@@ -222,7 +209,7 @@ export default function HorseForm({ action, caballo, opciones }: Props) {
         </label>
       </Section>
 
-      <Section title="Fotos">
+      <Section title="Fotos y video">
         <p className="text-sm text-neutral-600 sm:col-span-2">
           Sube la foto en{" "}
           <Link href="/admin/media" target="_blank" className="font-medium text-dlc-cuero underline">
@@ -250,6 +237,12 @@ export default function HorseForm({ action, caballo, opciones }: Props) {
           />
           <ImagePreview url={retrato} alt="Retrato" />
         </Field>
+        <GalleryEditor initial={caballo?.galeria ?? []} />
+        <VideoField
+          name="video_url"
+          label="Video del caballo"
+          initial={caballo?.video_url ?? ""}
+        />
       </Section>
 
       <Section title="Pedigrí">
@@ -264,6 +257,61 @@ export default function HorseForm({ action, caballo, opciones }: Props) {
             <option value="">— Sin registrar —</option>
             {parentOptions}
           </select>
+        </Field>
+      </Section>
+
+      <Section title="Preventa de Cruzas">
+        <div className="sm:col-span-2">
+          <label className="flex cursor-pointer items-center gap-3 text-sm">
+            {/* Interruptor: checkbox real (accesible) con aspecto de switch. */}
+            <input
+              type="checkbox"
+              name="preventa_activa"
+              role="switch"
+              checked={preventa}
+              onChange={(e) => setPreventa(e.target.checked)}
+              className="peer sr-only"
+            />
+            <span
+              aria-hidden="true"
+              className="relative h-6 w-11 shrink-0 rounded-full bg-neutral-300 transition-colors peer-checked:bg-dlc-cuero peer-focus-visible:ring-2 peer-focus-visible:ring-dlc-oro after:absolute after:top-0.5 after:left-0.5 after:h-5 after:w-5 after:rounded-full after:bg-white after:shadow after:transition-transform peer-checked:after:translate-x-5"
+            />
+            <span>
+              <span className="font-medium">Anunciar preventa</span>
+              <span className="text-neutral-500">
+                {" "}
+                · tarjeta «Lista de espera» en la ficha del semental
+              </span>
+            </span>
+          </label>
+        </div>
+        <Field label="Cruza con (yegua)" hint={preventa ? "Obligatorio con la preventa activa." : undefined}>
+          <input
+            name="preventa_pareja"
+            list="yeguas-dlc"
+            maxLength={120}
+            required={preventa}
+            defaultValue={caballo?.preventa_pareja ?? ""}
+            placeholder="Nombre de la yegua"
+            className={`${inputClass} ${preventa ? "" : "opacity-60"}`}
+          />
+          {/* Sugerencias: yeguas del catálogo; también se puede escribir otra. */}
+          <datalist id="yeguas-dlc">
+            {mares.map((m) => (
+              <option key={m.id} value={m.nombre} />
+            ))}
+          </datalist>
+        </Field>
+        <Field label="Año proyectado" hint="Año en que nacería el potro.">
+          <input
+            name="preventa_anio"
+            type="number"
+            min={2000}
+            max={2100}
+            defaultValue={caballo?.preventa_anio ?? ""}
+            placeholder={String(new Date().getFullYear() + 1)}
+            className={`${inputClass} ${preventa ? "" : "opacity-60"}`}
+          />
         </Field>
       </Section>
 

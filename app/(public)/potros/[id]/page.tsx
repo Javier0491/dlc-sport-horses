@@ -3,6 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import FloatingCta from "@/components/FloatingCta";
+import HorseMedia from "@/components/HorseMedia";
 import PedigreeTree, { type LineLink } from "@/components/PedigreeTree";
 import {
   bloodlines,
@@ -120,6 +121,9 @@ export default async function FichaPotro({
           )}
         </div>
       </section>
+
+      {/* Video y galería */}
+      <HorseMedia horse={foal} />
 
       <div className="mx-auto grid max-w-7xl gap-16 px-6 py-16 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:gap-20 lg:py-24">
         {/* Datos y retrato */}

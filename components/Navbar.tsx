@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
+import RotatingLogo from "./RotatingLogo";
 
 const leftLinks = [
   { href: "/reproductores", label: "Sementales" },
@@ -62,11 +63,10 @@ export default function Navbar() {
         <Link
           href="/"
           onClick={() => setOpen(false)}
+          aria-label="Rancho DLC, inicio"
           className="col-start-2 flex flex-col items-center"
         >
-          <span className="font-serif text-3xl font-light tracking-[0.35em]">
-            DLC
-          </span>
+          <RotatingLogo className="h-12 w-28" />
           <span className="mt-1 h-px w-8 bg-dlc-oro" />
         </Link>
 

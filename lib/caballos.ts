@@ -1,8 +1,16 @@
 // Tabla public.caballos (ver supabase/schema.sql). Solo servidor: usa la service role key.
-import { CATEGORIAS, SEXOS, type Caballo, type CaballoInput, type CaballoOpcion } from "./caballos-types";
+import {
+  CATEGORIAS,
+  MAX_GALERIA,
+  SEXOS,
+  type Caballo,
+  type CaballoInput,
+  type CaballoOpcion,
+} from "./caballos-types";
 import { isAllowedImageUrl } from "./image-url";
 import { slugify } from "./slug";
 import { supabaseAdmin } from "./supabase-admin";
+import { parseVideo, VIDEO_HINT } from "./video";
 
 export * from "./caballos-types";
 
@@ -11,6 +19,10 @@ const table = () => supabaseAdmin().from("caballos");
 // Errores de Postgres traducidos para el cliente.
 function dbError(error: { code?: string; message: string }, action: string): Error {
   switch (error.code) {
+    case "PGRST204": // columna que la API no conoce
+      return new Error(
+        "Falta actualizar la base de datos: ejecuta supabase/schema.sql en el SQL Editor de Supabase.",
+      );
     case "23505":
       return new Error("Ya existe un caballo con ese nombre.");
     case "23503":
@@ -106,6 +118,30 @@ function imageUrl(form: FormData, key: string, label: string) {
   return value;
 }
 
+// La galería llega como JSON (lista ordenada de URLs) desde el editor del panel.
+function gallery(form: FormData): string[] {
+  let urls: unknown;
+  try {
+    urls = JSON.parse(String(form.get("galeria") ?? "[]"));
+  } catch {
+    throw new Error("La galería no se pudo leer. Recarga la página e inténtalo de nuevo.");
+  }
+  if (!Array.isArray(urls) || urls.some((u) => typeof u !== "string")) {
+    throw new Error("La galería no se pudo leer. Recarga la página e inténtalo de nuevo.");
+  }
+  const unique = [...new Set(urls.map((u: string) => u.trim()).filter(Boolean))];
+  if (unique.length > MAX_GALERIA) throw new Error(`La galería admite hasta ${MAX_GALERIA} fotos.`);
+  const bad = unique.find((u) => !isAllowedImageUrl(u));
+  if (bad) throw new Error("Galería: hay una foto que no es de la sección Medios. Quítala y vuelve a añadirla.");
+  return unique;
+}
+
+function video(form: FormData) {
+  const value = text(form, "video_url");
+  if (value && !parseVideo(value)) throw new Error(`Video: ${VIDEO_HINT}`);
+  return value;
+}
+
 // El id (slug) sale del nombre al crear y no cambia al editar.
 export function parseCaballoForm(form: FormData, id?: string): CaballoInput {
   const nombre = text(form, "nombre");
@@ -122,6 +158,23 @@ export function parseCaballoForm(form: FormData, id?: string): CaballoInput {
   if (anio !== null && !Number.isInteger(anio)) throw new Error("El año debe ser un número entero.");
 
   const precio = number(form, "precio_rango", "El rango de precio", 1, 5);
+
+  const nivel = text(form, "nivel");
+  if (nivel && nivel.length > 40) throw new Error("El nivel no puede pasar de 40 caracteres.");
+
+  // Preventa: solo tiene sentido con la yegua de la cruza indicada.
+  const preventa_activa = form.get("preventa_activa") === "on";
+  const preventa_pareja = text(form, "preventa_pareja");
+  if (preventa_pareja && preventa_pareja.length > 120) {
+    throw new Error("El nombre de la yegua de la cruza no puede pasar de 120 caracteres.");
+  }
+  if (preventa_activa && !preventa_pareja) {
+    throw new Error("Para activar la preventa, indica con qué yegua será la cruza.");
+  }
+  const preventa_anio = number(form, "preventa_anio", "El año de la cruza", 2000, 2100);
+  if (preventa_anio !== null && !Number.isInteger(preventa_anio)) {
+    throw new Error("El año de la cruza debe ser un número entero.");
+  }
 
   const padre_id = text(form, "padre_id");
   const madre_id = text(form, "madre_id");
@@ -150,5 +203,11 @@ export function parseCaballoForm(form: FormData, id?: string): CaballoInput {
     padre_id,
     madre_id,
     activo: form.get("activo") === "on",
+    nivel,
+    preventa_activa,
+    preventa_pareja,
+    preventa_anio,
+    galeria: gallery(form),
+    video_url: video(form),
   };
 }

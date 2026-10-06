@@ -13,5 +13,7 @@ export function supabaseAdmin() {
   }
   return createClient(url, serviceKey, {
     auth: { persistSession: false },
+    // El panel siempre debe ver el dato actual, nunca una copia de la caché de Next.
+    global: { fetch: (input, init) => fetch(input, { ...init, cache: "no-store" }) },
   });
 }

@@ -24,11 +24,19 @@ export type Caballo = {
   padre_id: string | null;
   madre_id: string | null;
   activo: boolean;
+  nivel: string | null; // nivel deportivo actual: '1.30 m', 'Jóvenes caballos'
+  preventa_activa: boolean; // anuncia una cruza futura en la ficha del semental
+  preventa_pareja: string | null; // yegua de esa cruza
+  preventa_anio: number | null; // año proyectado del potro
+  video_url: string | null; // YouTube, Vimeo o .mp4 (ver lib/video.ts)
   creado_en: string;
   actualizado_en: string;
 };
 
-// Lo que escribe el panel: la base de datos pone galeria, creado_en y actualizado_en.
-export type CaballoInput = Omit<Caballo, "galeria" | "creado_en" | "actualizado_en">;
+// Lo que escribe el panel: la base de datos pone creado_en y actualizado_en.
+export type CaballoInput = Omit<Caballo, "creado_en" | "actualizado_en">;
+
+// Fotos de la galería de un caballo (además de la principal y el retrato).
+export const MAX_GALERIA = 24;
 
 export type CaballoOpcion = Pick<Caballo, "id" | "nombre" | "categoria">;

@@ -95,6 +95,19 @@ alter table public.caballos add column if not exists color text;
 alter table public.caballos add column if not exists actualmente_saltando boolean not null default false;
 alter table public.caballos add column if not exists retrato_url text;
 
+-- Progenie y preventa de cruzas (ficha pública de cada semental).
+alter table public.caballos add column if not exists nivel text
+  check (char_length(nivel) <= 40);                                  -- '1.30 m', 'Jóvenes caballos'
+alter table public.caballos add column if not exists preventa_activa boolean not null default false;
+alter table public.caballos add column if not exists preventa_pareja text
+  check (char_length(preventa_pareja) <= 120);                       -- yegua de la cruza anunciada
+alter table public.caballos add column if not exists preventa_anio smallint
+  check (preventa_anio between 2000 and 2100);                       -- año proyectado del potro
+
+-- Video del caballo en su ficha (YouTube, Vimeo o .mp4 del bucket media).
+alter table public.caballos add column if not exists video_url text
+  check (char_length(video_url) <= 500);
+
 create index if not exists caballos_categoria_activos_idx
   on public.caballos (categoria) where activo;
 create index if not exists caballos_padre_idx on public.caballos (padre_id);
@@ -139,6 +152,22 @@ create index if not exists prospectos_fecha_idx on public.prospectos (fecha_crea
 -- 5. Seguridad: Row Level Security
 --    (el panel de Supabase y la service_role key no están sujetos a RLS)
 -- ---------------------------------------------------------------------
+-- Se borran TODAS las políticas existentes de estas tablas (también las creadas a mano
+-- en el panel de Supabase): una política permisiva olvidada dejaría leer caballos
+-- ocultos o editar la portada con la anon key. Después se crean solo las de abajo.
+do $$
+declare
+  pol record;
+begin
+  for pol in
+    select policyname, tablename from pg_policies
+    where schemaname = 'public'
+      and tablename in ('caballos', 'prospectos', 'configuracion_sitio', 'concursos', 'pruebas', 'inscripciones')
+  loop
+    execute format('drop policy %I on public.%I', pol.policyname, pol.tablename);
+  end loop;
+end $$;
+
 alter table public.caballos   enable row level security;
 alter table public.prospectos enable row level security;
 
@@ -187,6 +216,100 @@ create or replace view public.pedigri as
 
 revoke all on public.pedigri from anon, authenticated;
 grant select on public.pedigri to anon, authenticated;
+
+-- ---------------------------------------------------------------------
+-- 7. Tabla configuracion_sitio (textos globales: portada, legado, eventos)
+--    Se edita desde /admin/contenido con la service role key.
+-- ---------------------------------------------------------------------
+create table if not exists public.configuracion_sitio (
+  id          text primary key,                 -- 'portada', 'legado', 'eventos'
+  titulo      text,
+  subtitulo   text,
+  descripcion text,
+  imagen_url  text,
+  datos       jsonb,
+  updated_at  timestamptz default timezone('utc'::text, now())
+);
+
+insert into public.configuracion_sitio (id) values ('portada'), ('legado'), ('eventos')
+on conflict (id) do nothing;
+
+-- La web solo puede LEER: sin esto, cualquiera con la anon key (que va en el
+-- navegador) podría cambiar los textos de la portada.
+alter table public.configuracion_sitio enable row level security;
+revoke all on public.configuracion_sitio from anon, authenticated;
+grant select on public.configuracion_sitio to anon, authenticated;
+
+drop policy if exists "Web: leer configuracion" on public.configuracion_sitio;
+create policy "Web: leer configuracion"
+  on public.configuracion_sitio
+  for select
+  to anon, authenticated
+  using (true);
+
+-- ---------------------------------------------------------------------
+-- 8. Módulo de concursos: concursos → pruebas → inscripciones
+--    Se gestionan desde /admin/concursos con la service role key.
+-- ---------------------------------------------------------------------
+create table if not exists public.concursos (
+  id           uuid primary key default gen_random_uuid(),
+  nombre       text not null,
+  fecha_inicio date not null,
+  fecha_fin    date not null,
+  estado       text default 'proximo'
+               constraint concursos_estado_check check (estado in ('proximo', 'activo', 'finalizado')),
+  imagen_url   text,
+  created_at   timestamptz default timezone('utc'::text, now())
+);
+
+create table if not exists public.pruebas (
+  id          uuid primary key default gen_random_uuid(),
+  concurso_id uuid references public.concursos (id),
+  nombre      text not null,
+  fecha       date not null,
+  hora_inicio time not null,
+  estado      text default 'abierta'
+              constraint pruebas_estado_check check (estado in ('abierta', 'en_curso', 'finalizada')),
+  created_at  timestamptz default timezone('utc'::text, now())
+);
+
+create table if not exists public.inscripciones (
+  id             uuid primary key default gen_random_uuid(),
+  prueba_id      uuid references public.pruebas (id),
+  jinete_nombre  text not null,
+  caballo_nombre text not null,
+  caballo_id     text references public.caballos (id),
+  orden_salida   integer,
+  faltas         integer,
+  tiempo         numeric,
+  posicion       integer,
+  pagado         boolean default false,
+  created_at     timestamptz default timezone('utc'::text, now())
+);
+
+-- Transmisión en vivo (YouTube Live o Vimeo) que se muestra mientras el concurso está 'activo'.
+alter table public.concursos add column if not exists livestream_url text
+  check (char_length(livestream_url) <= 500);
+
+create index if not exists pruebas_concurso_idx on public.pruebas (concurso_id);
+create index if not exists inscripciones_prueba_idx on public.inscripciones (prueba_id);
+
+-- Calendario público: la web solo puede LEER concursos y pruebas.
+-- Inscripciones (nombres de jinetes, pagos): sin acceso con la anon key.
+alter table public.concursos     enable row level security;
+alter table public.pruebas       enable row level security;
+alter table public.inscripciones enable row level security;
+
+revoke all on public.concursos, public.pruebas, public.inscripciones from anon, authenticated;
+grant select on public.concursos, public.pruebas to anon, authenticated;
+
+drop policy if exists "Web: leer concursos" on public.concursos;
+create policy "Web: leer concursos"
+  on public.concursos for select to anon, authenticated using (true);
+
+drop policy if exists "Web: leer pruebas" on public.pruebas;
+create policy "Web: leer pruebas"
+  on public.pruebas for select to anon, authenticated using (true);
 
 -- La API de Supabase (PostgREST) relee las columnas nuevas.
 notify pgrst, 'reload schema';

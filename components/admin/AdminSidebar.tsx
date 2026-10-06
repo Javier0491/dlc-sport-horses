@@ -7,6 +7,7 @@ import { logout } from "@/app/(admin)/admin/actions";
 const links = [
   { href: "/admin", label: "Dashboard" },
   { href: "/admin/caballos", label: "Caballos" },
+  { href: "/admin/concursos", label: "Concursos" },
   { href: "/admin/contenido", label: "Contenido Web" },
   { href: "/admin/media", label: "Medios" },
 ];

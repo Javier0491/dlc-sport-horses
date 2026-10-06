@@ -84,6 +84,14 @@ function FoalCard({ foal }: { foal: Horse }) {
           </span>
         )}
         {foal.priceLevel && <PriceBadge level={foal.priceLevel} />}
+        {foal.video && (
+          <span className="absolute right-4 bottom-4 flex items-center gap-1.5 bg-dlc-negro/75 px-3 py-1.5 text-[9px] font-medium uppercase tracking-[0.25em] text-dlc-marfil backdrop-blur-sm">
+            <svg viewBox="0 0 24 24" className="h-3 w-3 text-dlc-oro" fill="currentColor" aria-hidden="true">
+              <path d="M8 5.5v13a1 1 0 0 0 1.5.86l10.5-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5Z" />
+            </svg>
+            Video
+          </span>
+        )}
       </div>
 
       <div className="flex flex-1 flex-col p-6">

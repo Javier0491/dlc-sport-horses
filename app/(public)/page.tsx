@@ -2,11 +2,9 @@ import Image from "next/image";
 import Link from "next/link";
 import Reveal from "@/components/Reveal";
 import { DISCIPLINE } from "@/lib/catalog";
-import { getSementalesActivos } from "@/lib/data";
-
-// Placeholder temporal mientras no hay video propio del rancho.
-const HERO_IMAGE_SRC =
-  "https://images.unsplash.com/photo-1450052590821-8bf91254a353";
+import { POR_DEFECTO } from "@/lib/contenido-types";
+import { getConfiguracion, getSementalesActivos } from "@/lib/data";
+import { isAllowedImageUrl } from "@/lib/image-url";
 
 // Pendiente: reactivar el <video> cuando exista (ej. /videos/hero.mp4 en /public).
 // const HERO_VIDEO_SRC = "/videos/hero.mp4";
@@ -52,6 +50,17 @@ const pillars = [
 ];
 
 export default async function Home() {
+  // Portada y Nuestro Legado: tabla configuracion_sitio (se editan en /admin/contenido).
+  // El hero lee 'portada'; la sección de legado es un adelanto de /el-rancho ('legado').
+  const [portada, legado] = await Promise.all([
+    getConfiguracion("portada"),
+    getConfiguracion("legado"),
+  ]);
+  const heroImage =
+    portada?.imagen_url && isAllowedImageUrl(portada.imagen_url)
+      ? portada.imagen_url
+      : POR_DEFECTO.portada.imagen_url;
+
   // "La Joya de la Corona": el semental publicado de mayor rango de precio (y con foto).
   // Si no hay ninguno, o Supabase falla, la sección no se muestra.
   const stallions = await getSementalesActivos().catch(() => []);
@@ -73,7 +82,7 @@ export default async function Home() {
           aria-hidden="true"
         /> */}
         <Image
-          src={HERO_IMAGE_SRC}
+          src={heroImage}
           alt=""
           fill
           sizes="100vw"
@@ -86,12 +95,17 @@ export default async function Home() {
 
         <div className="relative z-10 flex h-full flex-col items-center justify-center px-6 text-center">
           <h1 className="font-serif text-5xl font-light tracking-[0.08em] text-dlc-marfil sm:text-7xl lg:text-8xl">
-            Rancho DLC
+            {portada?.titulo || POR_DEFECTO.portada.titulo}
           </h1>
           <span className="mt-8 h-px w-16 bg-dlc-oro" />
           <p className="mt-8 max-w-xl text-sm font-light uppercase leading-7 tracking-[0.25em] text-dlc-marfil/85 sm:text-base">
-            Excelencia en Genética Equina y Alto Rendimiento
+            {portada?.subtitulo || POR_DEFECTO.portada.subtitulo}
           </p>
+          {portada?.descripcion && (
+            <p className="mt-5 max-w-lg text-sm font-light leading-7 text-dlc-marfil/70 sm:text-base">
+              {portada.descripcion}
+            </p>
+          )}
         </div>
 
         <a
@@ -215,19 +229,26 @@ export default async function Home() {
       <section className="bg-dlc-arena px-6 py-32 sm:py-48">
         <div className="mx-auto flex max-w-3xl flex-col items-center text-center">
           <p className="text-[11px] uppercase tracking-[0.5em] text-dlc-cuero">
-            Nuestro Legado
+            El Rancho
           </p>
+          {legado?.titulo && (
+            <h2 className="mt-5 font-serif text-4xl font-light text-dlc-negro sm:text-5xl">
+              {legado.titulo}
+            </h2>
+          )}
           <span className="mt-8 h-px w-16 bg-dlc-oro" />
-          <p className="mt-12 font-serif text-2xl font-light leading-relaxed text-dlc-negro sm:text-3xl sm:leading-relaxed">
-            En el corazón de Jalisco, la tradición ecuestre se vive con
-            paciencia y respeto. Cada potro que nace en Rancho DLC recibe el
-            mismo cuidado que nos enseñaron quienes vinieron antes: atención
-            diaria, entrenamiento sin prisa y una pasión inquebrantable por el
-            alto rendimiento.
+          <p className="mt-12 whitespace-pre-line font-serif text-2xl font-light leading-relaxed text-dlc-negro sm:text-3xl sm:leading-relaxed">
+            {legado?.descripcion || POR_DEFECTO.legado.descripcion}
           </p>
           <p className="mt-10 font-serif text-lg italic text-dlc-cuero">
-            Tradición, cuidado y pasión.
+            {legado?.subtitulo || POR_DEFECTO.legado.subtitulo}
           </p>
+          <Link
+            href="/el-rancho"
+            className="mt-12 text-xs uppercase tracking-[0.3em] text-dlc-negro/70 underline-offset-8 transition-colors hover:text-dlc-cuero hover:underline"
+          >
+            Conocer el rancho →
+          </Link>
         </div>
       </section>
     </main>

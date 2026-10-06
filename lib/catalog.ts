@@ -34,6 +34,20 @@ export type Horse = {
   gallery: string[];
   sire: Ancestor | null;
   dam: Ancestor | null;
+  level: string | null; // nivel deportivo actual: '1.30 m', 'Jóvenes caballos'
+  video: string | null; // enlace de YouTube/Vimeo/.mp4 (ver lib/video.ts)
+  // Cruza anunciada en preventa (solo si está activa y tiene yegua).
+  presale: { mare: string; year: number | null } | null;
+};
+
+// Un hijo destacado en la ficha de su padre o madre.
+export type Offspring = {
+  id: string;
+  name: string;
+  birthYear: number | null;
+  level: string | null;
+  jumping: boolean;
+  href: string | null; // ficha pública, si su categoría tiene una
 };
 
 export const priceLabel = (level: number) => `$${"*".repeat(level)}`;

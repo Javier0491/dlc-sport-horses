@@ -3,9 +3,11 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import FloatingCta from "@/components/FloatingCta";
+import HorseMedia from "@/components/HorseMedia";
 import PedigreeTree from "@/components/PedigreeTree";
 import { DISCIPLINE, heightLabel, priceLabel } from "@/lib/catalog";
-import { getCaballoBySlug, getSementalesActivos } from "@/lib/data";
+import { whatsappUrl } from "@/lib/contact";
+import { getCaballoBySlug, getProgenie, getSementalesActivos } from "@/lib/data";
 
 const getStallion = (id: string) => getCaballoBySlug(id, ["Semental"]);
 
@@ -56,6 +58,18 @@ export default async function Semental({
   ].filter((fact) => fact.value);
 
   const contactHref = `/contacto?semental=${stallion.id}`;
+  const progeny = await getProgenie(stallion.id);
+
+  // Preventa: mensaje de WhatsApp ya escrito con la cruza concreta.
+  const presale = stallion.presale;
+  const presaleCross = presale ? `${stallion.name} × ${presale.mare}` : "";
+  const presaleHref = presale
+    ? whatsappUrl(
+        `Hola, quiero entrar a la lista de espera de la cruza ${presaleCross}` +
+          (presale.year ? ` (potro ${presale.year})` : "") +
+          ". ¿Me pueden compartir disponibilidad y condiciones?",
+      )
+    : "";
 
   return (
     <main className="flex-1">
@@ -88,6 +102,9 @@ export default async function Semental({
           <span className="mt-6 h-px w-16 bg-dlc-oro" />
         </div>
       </section>
+
+      {/* Video y galería */}
+      <HorseMedia horse={stallion} />
 
       <div className="mx-auto grid max-w-7xl gap-16 px-6 py-16 lg:grid-cols-2 lg:gap-20 lg:py-24">
         {/* Datos y galería */}
@@ -144,33 +161,10 @@ export default async function Semental({
             </>
           )}
 
-          {stallion.gallery.length > 0 && (
-            <>
-              <p className="mt-14 text-[11px] uppercase tracking-[0.4em] text-dlc-cuero">
-                Galería
-              </p>
-              <div className="mt-6 grid grid-cols-3 gap-3">
-                {stallion.gallery.map((photo, index) => (
-                  <div
-                    key={photo}
-                    className="relative aspect-square overflow-hidden bg-dlc-arena"
-                  >
-                    <Image
-                      src={photo}
-                      alt={`${stallion.name}, foto ${index + 2}`}
-                      fill
-                      sizes="(min-width: 1024px) 15vw, 30vw"
-                      className="object-cover transition-transform duration-700 hover:scale-105"
-                    />
-                  </div>
-                ))}
-              </div>
-            </>
-          )}
         </section>
 
         {/* Pedigrí */}
-        <section>
+        <section className="min-w-0">
           <p className="text-[11px] uppercase tracking-[0.4em] text-dlc-cuero">
             Pedigrí
           </p>
@@ -181,8 +175,89 @@ export default async function Semental({
           <div className="mt-8">
             <PedigreeTree sire={stallion.sire} dam={stallion.dam} />
           </div>
+
+          {/* Progenie: hijos publicados que compiten o tienen nivel asignado */}
+          {progeny.length > 0 && (
+            <div className="mt-16">
+              <p className="text-[11px] uppercase tracking-[0.4em] text-dlc-cuero">
+                Progenie
+              </p>
+              <h2 className="mt-3 font-serif text-3xl font-medium text-dlc-negro">
+                Resultados de sus hijos
+              </h2>
+              <ul className="mt-8 divide-y divide-dlc-negro/10 border-y border-dlc-negro/10">
+                {progeny.map((child) => {
+                  const content = (
+                    <>
+                      <span className="min-w-0">
+                        <span className="block truncate font-serif text-xl text-dlc-negro transition-colors group-hover:text-dlc-cuero">
+                          {child.name}
+                        </span>
+                        {child.birthYear && (
+                          <span className="mt-1 block text-[10px] uppercase tracking-[0.3em] text-dlc-negro/45">
+                            {child.birthYear}
+                          </span>
+                        )}
+                      </span>
+                      <span className="shrink-0 border border-dlc-oro/60 px-3 py-1.5 text-[10px] uppercase tracking-[0.25em] text-dlc-cuero">
+                        {child.level ?? "En competencia"}
+                      </span>
+                    </>
+                  );
+                  return (
+                    <li key={child.id}>
+                      {child.href ? (
+                        <Link
+                          href={child.href}
+                          className="group flex items-center justify-between gap-6 py-4"
+                        >
+                          {content}
+                        </Link>
+                      ) : (
+                        <div className="flex items-center justify-between gap-6 py-4">
+                          {content}
+                        </div>
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          )}
         </section>
       </div>
+
+      {/* Preventa de cruzas */}
+      {presale && (
+        <section className="bg-dlc-negro px-6 py-20 sm:py-24">
+          <div className="mx-auto max-w-5xl border border-dlc-oro/40 px-6 py-12 text-center sm:px-12 sm:py-16">
+            <p className="text-[11px] uppercase tracking-[0.5em] text-dlc-oro">
+              Preventa de cruzas
+            </p>
+            <h2 className="mt-6 font-serif text-3xl font-light text-dlc-marfil sm:text-5xl">
+              {stallion.name}
+              <span className="mx-4 text-dlc-oro">×</span>
+              {presale.mare}
+            </h2>
+            <span className="mx-auto mt-8 block h-px w-16 bg-dlc-oro" />
+            <p className="mt-8 text-sm uppercase tracking-[0.3em] text-dlc-marfil/70">
+              {presale.year ? `Potro proyectado ${presale.year}` : "Próxima temporada"}
+            </p>
+            <p className="mx-auto mt-6 max-w-xl leading-8 text-dlc-marfil/60">
+              Lugares limitados. Reserva tu prioridad para esta cruza y recibe la
+              información antes que nadie.
+            </p>
+            <a
+              href={presaleHref}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-10 inline-block bg-dlc-oro px-10 py-4 text-xs font-medium uppercase tracking-[0.3em] text-dlc-negro transition-colors duration-500 hover:bg-dlc-marfil"
+            >
+              Entrar a Lista de Espera
+            </a>
+          </div>
+        </section>
+      )}
 
       {/* CTA */}
       <section id="cta" className="bg-dlc-cuero px-6 py-16 sm:py-20">

@@ -3,7 +3,9 @@
 // en el panel nunca debe llegar a la web aunque cambien las políticas.
 import { cache } from "react";
 import type { Caballo, Categoria } from "./caballos-types";
-import type { Ancestor, Horse } from "./catalog";
+import type { Ancestor, Horse, Offspring } from "./catalog";
+import type { Configuracion } from "./contenido-types";
+import { hoyEnMexico, type Concurso, type Prueba } from "./concursos-types";
 import { supabase } from "./supabase";
 
 // Pedigrí a 3 generaciones (padres, abuelos y bisabuelos).
@@ -70,7 +72,38 @@ function toHorse(c: Caballo, pedigri: Map<string, PedigriRow>): Horse {
     gallery: c.galeria,
     sire: tree(c.padre_id, pedigri, GENERATIONS),
     dam: tree(c.madre_id, pedigri, GENERATIONS),
+    // "?? null": antes de ejecutar schema.sql estas columnas aún no existen.
+    level: c.nivel ?? null,
+    video: c.video_url ?? null,
+    presale:
+      c.preventa_activa && c.preventa_pareja
+        ? { mare: c.preventa_pareja, year: c.preventa_anio ?? null }
+        : null,
   };
+}
+
+const fichaHref = (c: Caballo) =>
+  c.categoria === "Semental"
+    ? `/reproductores/${c.id}`
+    : c.categoria === "Potro" || c.categoria === "Potranca"
+      ? `/potros/${c.id}`
+      : null; // las yeguas no tienen ficha pública
+
+// Hijos publicados de un caballo (por padre_id o madre_id) que compiten o tienen
+// un nivel asignado. Los más jóvenes primero.
+export async function getProgenie(id: string): Promise<Offspring[]> {
+  return (await getActivos())
+    .filter((c) => (c.padre_id === id || c.madre_id === id) && (c.actualmente_saltando || c.nivel))
+    .sort((a, b) => (b.anio_nacimiento ?? 0) - (a.anio_nacimiento ?? 0) || a.nombre.localeCompare(b.nombre))
+    .map((c) => ({
+      id: c.id,
+      name: c.nombre,
+      birthYear: c.anio_nacimiento,
+      level: c.nivel ?? null,
+    video: c.video_url ?? null,
+      jumping: c.actualmente_saltando,
+      href: fichaHref(c),
+    }));
 }
 
 const getHorses = cache(async (): Promise<Horse[]> => {
@@ -123,4 +156,54 @@ export async function getCatalogStallions(): Promise<CatalogStallion[]> {
     sireName: h.sire?.name ?? null,
     damSireName: h.dam?.sire?.name ?? null,
   }));
+}
+
+// ---------------------------------------------------------------------
+// Textos globales (tabla configuracion_sitio: 'portada', 'legado', 'eventos')
+// ---------------------------------------------------------------------
+
+// null si la fila no existe o Supabase falla: la página usa sus textos por defecto
+// (nunca debe caerse por esto).
+export const getConfiguracion = cache(async (id: string): Promise<Configuracion | null> => {
+  const { data, error } = await supabase
+    .from("configuracion_sitio")
+    .select("id, titulo, subtitulo, descripcion, imagen_url, datos, updated_at")
+    .eq("id", id)
+    .maybeSingle();
+  if (error) {
+    console.warn(`[data] No se pudo leer configuracion_sitio "${id}": ${error.message}`);
+    return null;
+  }
+  return data as Configuracion | null;
+});
+
+// ---------------------------------------------------------------------
+// Calendario de concursos (tablas concursos y pruebas)
+// ---------------------------------------------------------------------
+
+export type ConcursoPublico = Pick<
+  Concurso,
+  "id" | "nombre" | "fecha_inicio" | "fecha_fin" | "estado" | "imagen_url" | "livestream_url"
+> & { pruebas: Pick<Prueba, "id" | "nombre" | "fecha" | "hora_inicio" | "estado">[] };
+
+// Concursos 'proximo' o 'activo' que no han terminado, del más cercano al más
+// lejano, con sus pruebas por fecha y hora. Si un concurso quedó en 'proximo'
+// después de su fecha de fin, tampoco se muestra (no anunciar algo ya pasado).
+// Si Supabase falla, la página muestra el aviso de calendario por publicar.
+export async function getConcursosPublicos(): Promise<ConcursoPublico[]> {
+  const { data, error } = await supabase
+    .from("concursos")
+    // "*" (no una lista de columnas): si falta alguna columna nueva en la base de
+    // datos, la consulta sigue funcionando en vez de dejar el calendario vacío.
+    .select("*, pruebas(id, nombre, fecha, hora_inicio, estado)")
+    .in("estado", ["proximo", "activo"])
+    .gte("fecha_fin", hoyEnMexico())
+    .order("fecha_inicio")
+    .order("fecha", { referencedTable: "pruebas" })
+    .order("hora_inicio", { referencedTable: "pruebas" });
+  if (error) {
+    console.warn(`[data] No se pudieron leer los concursos: ${error.message}`);
+    return [];
+  }
+  return (data as ConcursoPublico[]).map((c) => ({ ...c, livestream_url: c.livestream_url ?? null }));
 }
