@@ -311,6 +311,39 @@ drop policy if exists "Web: leer pruebas" on public.pruebas;
 create policy "Web: leer pruebas"
   on public.pruebas for select to anon, authenticated using (true);
 
+-- ---------------------------------------------------------------------
+-- 9. Equipo: dirección, personal médico y fotografía (página /equipo)
+--    Se gestiona desde /admin/equipo con la service role key.
+-- ---------------------------------------------------------------------
+create table if not exists public.equipo (
+  id         uuid primary key default gen_random_uuid(),
+  nombre     text not null check (char_length(nombre) <= 120),
+  puesto     text not null check (char_length(puesto) <= 120),
+  area       text not null default 'medico'
+             constraint equipo_area_check check (area in ('direccion', 'medico', 'fotografia')),
+  foto_url   text check (char_length(foto_url) <= 500),
+  bio        text check (char_length(bio) <= 1000),
+  orden      integer not null default 0,
+  activo     boolean not null default true,
+  created_at timestamptz default timezone('utc'::text, now())
+);
+
+-- La web solo puede LEER a las personas visibles.
+alter table public.equipo enable row level security;
+revoke all on public.equipo from anon, authenticated;
+grant select on public.equipo to anon, authenticated;
+
+drop policy if exists "Web: leer equipo" on public.equipo;
+create policy "Web: leer equipo"
+  on public.equipo for select to anon, authenticated using (activo);
+
+-- Primera ficha: la fotógrafa (solo si aún no hay nadie en Fotografía; después
+-- se edita desde /admin/equipo).
+insert into public.equipo (nombre, puesto, area, foto_url, bio, orden)
+select 'Fotógrafa DLC', 'Fotógrafa', 'fotografia', '/equipo/fotografa.jpg',
+       'La mejor. Cada imagen de nuestros caballos lleva su mirada.', 0
+where not exists (select 1 from public.equipo where area = 'fotografia');
+
 -- La API de Supabase (PostgREST) relee las columnas nuevas.
 notify pgrst, 'reload schema';
 

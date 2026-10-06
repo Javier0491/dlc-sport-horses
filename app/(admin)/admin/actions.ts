@@ -31,6 +31,7 @@ import {
   updateConcursoRow,
   updatePruebaRow,
 } from "@/lib/concursos";
+import { deleteMiembroRow, insertMiembro, parseMiembroForm, updateMiembroRow } from "@/lib/equipo";
 
 export type LoginState = { error: string | null };
 
@@ -268,4 +269,57 @@ export async function deletePrueba(id: string): Promise<Result<null>> {
   } catch (err) {
     return failure(err);
   }
+}
+
+// ---------------------------------------------------------------------
+// Equipo
+// ---------------------------------------------------------------------
+
+export type MiembroFormState = { error: string | null; saved: boolean };
+
+const revalidateEquipo = () => {
+  revalidatePath("/admin/equipo", "layout");
+  revalidatePath("/equipo");
+};
+
+export async function createMiembro(
+  _prev: MiembroFormState,
+  formData: FormData,
+): Promise<MiembroFormState> {
+  try {
+    await requireAdmin();
+    await insertMiembro(parseMiembroForm(formData));
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : "Error inesperado.", saved: false };
+  }
+  revalidateEquipo();
+  redirect("/admin/equipo");
+}
+
+export async function updateMiembro(
+  id: string,
+  _prev: MiembroFormState,
+  formData: FormData,
+): Promise<MiembroFormState> {
+  try {
+    await requireAdmin();
+    if (!isUuid(id)) throw new Error("Ficha inválida.");
+    await updateMiembroRow(id, parseMiembroForm(formData));
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : "Error inesperado.", saved: false };
+  }
+  revalidateEquipo();
+  return { error: null, saved: true };
+}
+
+export async function deleteMiembro(id: string): Promise<Result<null>> {
+  try {
+    await requireAdmin();
+    if (!isUuid(id)) throw new Error("Ficha inválida.");
+    await deleteMiembroRow(id);
+  } catch (err) {
+    return failure(err);
+  }
+  revalidateEquipo();
+  redirect("/admin/equipo");
 }

@@ -6,6 +6,7 @@ import type { Caballo, Categoria } from "./caballos-types";
 import type { Ancestor, Horse, Offspring } from "./catalog";
 import type { Configuracion } from "./contenido-types";
 import { hoyEnMexico, type Concurso, type Prueba } from "./concursos-types";
+import type { Miembro } from "./equipo-types";
 import { supabase } from "./supabase";
 
 // Pedigrí a 3 generaciones (padres, abuelos y bisabuelos).
@@ -206,4 +207,25 @@ export async function getConcursosPublicos(): Promise<ConcursoPublico[]> {
     return [];
   }
   return (data as ConcursoPublico[]).map((c) => ({ ...c, livestream_url: c.livestream_url ?? null }));
+}
+
+// ---------------------------------------------------------------------
+// Equipo (tabla equipo): solo las personas visibles
+// ---------------------------------------------------------------------
+
+export type MiembroPublico = Pick<Miembro, "id" | "nombre" | "puesto" | "area" | "foto_url" | "bio">;
+
+// Si la tabla aún no existe o Supabase falla, la página muestra su aviso de «muy pronto».
+export async function getEquipoPublico(): Promise<MiembroPublico[]> {
+  const { data, error } = await supabase
+    .from("equipo")
+    .select("id, nombre, puesto, area, foto_url, bio")
+    .eq("activo", true)
+    .order("orden")
+    .order("nombre");
+  if (error) {
+    console.warn(`[data] No se pudo leer el equipo: ${error.message}`);
+    return [];
+  }
+  return data as MiembroPublico[];
 }
