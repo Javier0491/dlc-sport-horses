@@ -88,17 +88,29 @@ export default async function FichaPotro({
       {/* Hero */}
       <section className="relative h-[70vh] min-h-[480px] w-full overflow-hidden bg-dlc-negro">
         {foal.image && (
-          <Image
-            src={foal.image}
-            alt={foal.name}
-            fill
-            sizes="100vw"
-            loading="eager"
-            fetchPriority="high"
-            className="object-cover object-center"
-          />
+          <>
+            {/* Fondo: la misma foto desenfocada rellena los lados */}
+            <Image
+              src={foal.image}
+              alt=""
+              aria-hidden="true"
+              fill
+              sizes="50vw"
+              className="scale-110 object-cover opacity-50 blur-2xl"
+            />
+            {/* La foto horizontal completa, sin recortes */}
+            <Image
+              src={foal.image}
+              alt={foal.name}
+              fill
+              sizes="100vw"
+              loading="eager"
+              fetchPriority="high"
+              className="object-contain object-top sm:object-center"
+            />
+          </>
         )}
-        <div className="absolute inset-0 bg-gradient-to-t from-dlc-negro/90 via-dlc-negro/20 to-dlc-negro/30" />
+        <div className="absolute inset-0 bg-gradient-to-t from-dlc-negro/85 via-dlc-negro/10 via-35% to-transparent" />
 
         <div className="relative z-10 mx-auto flex h-full max-w-7xl flex-col justify-end px-6 pb-12">
           <Link
