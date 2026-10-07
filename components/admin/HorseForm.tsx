@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { startTransition, useActionState, useCallback, useState } from "react";
+import { startTransition, useActionState, useState } from "react";
 import type { HorseFormState } from "@/app/(admin)/admin/actions";
 import {
   CATEGORIAS,
@@ -10,6 +10,7 @@ import {
   type CaballoOpcion,
 } from "@/lib/caballos-types";
 import { hintClass, inputClass, labelClass } from "./form-styles";
+import { useUploadCount } from "./DropArea";
 import GalleryEditor from "./GalleryEditor";
 import ImageUploadField from "./ImageUploadField";
 import VideoField from "./VideoField";
@@ -54,9 +55,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 
 export default function HorseForm({ action, caballo, opciones }: Props) {
   const [state, formAction, pending] = useActionState(action, INITIAL);
-  // Fotos subiéndose: no se guarda hasta que terminen, o se perderían.
-  const [uploading, setUploading] = useState(0);
-  const trackUpload = useCallback((busy: boolean) => setUploading((n) => n + (busy ? 1 : -1)), []);
+  const [uploading, trackUpload] = useUploadCount();
   const [preventa, setPreventa] = useState(caballo?.preventa_activa ?? false);
 
   // Enviar sin pasar `action` al <form>: así React no vacía los campos si hay un error.
@@ -228,6 +227,7 @@ export default function HorseForm({ action, caballo, opciones }: Props) {
           name="video_url"
           label="Video del caballo"
           initial={caballo?.video_url ?? ""}
+          onBusyChange={trackUpload}
         />
       </Section>
 
@@ -323,13 +323,13 @@ export default function HorseForm({ action, caballo, opciones }: Props) {
           </Link>
           <button
             type="submit"
-            disabled={pending || uploading > 0}
+            disabled={pending || uploading}
             className="rounded-md bg-dlc-negro px-6 py-2.5 text-sm font-medium text-dlc-marfil transition-colors hover:bg-dlc-cuero disabled:opacity-60"
           >
             {pending
               ? "Guardando…"
-              : uploading > 0
-                ? "Subiendo fotos…"
+              : uploading
+                ? "Subiendo archivos…"
                 : caballo ? "Guardar cambios" : "Crear caballo"}
           </button>
         </div>

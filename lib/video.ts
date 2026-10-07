@@ -1,4 +1,4 @@
-// Enlaces de video y transmisiones en vivo: YouTube, Vimeo o un archivo .mp4/.webm
+// Enlaces de video y transmisiones en vivo: YouTube, Vimeo o un archivo .mp4/.webm/.mov
 // del bucket de Supabase. Sin dependencias de servidor (lo usan el panel y la web).
 import { isAllowedImageUrl } from "./image-url";
 
@@ -54,7 +54,7 @@ export function parseVideo(value: string | null | undefined): Video | null {
   const vm = vimeo(url);
   if (vm) return { kind: "vimeo", embed: vm };
   // Archivo propio subido al bucket público de Supabase.
-  if (/\.(mp4|webm)$/i.test(url.pathname) && isAllowedImageUrl(raw)) return { kind: "file", src: raw };
+  if (/\.(mp4|webm|mov)$/i.test(url.pathname) && isAllowedImageUrl(raw)) return { kind: "file", src: raw };
   return null;
 }
 
@@ -67,4 +67,4 @@ export function embedUrl(video: Exclude<Video, { kind: "file" }>, autoplay = tru
 }
 
 export const VIDEO_HINT =
-  "Enlace de YouTube o Vimeo (también un .mp4 subido a Supabase Storage).";
+  "Arrastra un video (MP4, MOV o WEBM) o pega un enlace de YouTube o Vimeo.";

@@ -5,7 +5,8 @@ import { useState, useTransition } from "react";
 import { updateConfiguracion } from "@/app/(admin)/admin/actions";
 import { CAMPOS, type Configuracion, type Seccion } from "@/lib/contenido-types";
 import { hintClass, inputClass, labelClass } from "./form-styles";
-import ImagePreview from "./ImagePreview";
+import { useUploadCount } from "./DropArea";
+import ImageUploadField from "./ImageUploadField";
 import VideoField from "./VideoField";
 
 type Status = { kind: "idle" } | { kind: "saved" } | { kind: "error"; message: string };
@@ -20,7 +21,7 @@ export default function ContentForm({
 }) {
   const [pending, startTransition] = useTransition();
   const [status, setStatus] = useState<Status>({ kind: "idle" });
-  const [imagen, setImagen] = useState(values?.imagen_url ?? "");
+  const [uploading, trackUpload] = useUploadCount();
 
   // Sin `action` en el <form>: así React no vacía los campos tras guardar.
   const onSubmit = (event: React.FormEvent<HTMLFormElement>) => {
@@ -43,58 +44,50 @@ export default function ContentForm({
       onChange={() => setStatus({ kind: "idle" })}
       className="space-y-6"
     >
-      {CAMPOS.map((field) => (
-        <label key={field.name} className="block">
-          <span className={labelClass}>{field.label}</span>
-          {field.kind === "textarea" ? (
-            <textarea
-              name={field.name}
-              defaultValue={values?.descripcion ?? ""}
-              maxLength={field.maxLength}
-              rows={6}
-              className={inputClass}
-            />
-          ) : field.kind === "image" ? (
-            <input
-              name={field.name}
-              value={imagen}
-              onChange={(e) => setImagen(e.target.value)}
-              maxLength={field.maxLength}
-              placeholder="https://…supabase.co/storage/v1/object/public/media/…"
-              className={inputClass}
-            />
-          ) : (
-            <input
-              name={field.name}
-              defaultValue={values?.[field.name] ?? ""}
-              maxLength={field.maxLength}
-              className={inputClass}
-            />
-          )}
-          <span className={`block ${hintClass}`}>{seccion.hints[field.name]}</span>
-          {field.kind === "image" && (
-            <>
-              <span className={`block ${hintClass}`}>
-                Sube la foto en{" "}
-                <Link href="/admin/media" target="_blank" className="font-medium text-dlc-cuero underline">
-                  Medios
-                </Link>
-                , pulsa «Copiar URL» y pégala aquí.
-              </span>
-              <div className="max-w-sm">
-                <ImagePreview url={imagen} alt={field.label} />
-              </div>
-            </>
-          )}
-        </label>
-      ))}
+      {CAMPOS.map((field) =>
+        field.kind === "image" ? (
+          <ImageUploadField
+            key={field.name}
+            name={field.name}
+            label={field.label}
+            initial={values?.imagen_url ?? ""}
+            hint={seccion.hints[field.name]}
+            className="max-w-sm"
+            onBusyChange={trackUpload}
+            onChange={() => setStatus({ kind: "idle" })}
+          />
+        ) : (
+          <label key={field.name} className="block">
+            <span className={labelClass}>{field.label}</span>
+            {field.kind === "textarea" ? (
+              <textarea
+                name={field.name}
+                defaultValue={values?.descripcion ?? ""}
+                maxLength={field.maxLength}
+                rows={6}
+                className={inputClass}
+              />
+            ) : (
+              <input
+                name={field.name}
+                defaultValue={values?.[field.name] ?? ""}
+                maxLength={field.maxLength}
+                className={inputClass}
+              />
+            )}
+            <span className={`block ${hintClass}`}>{seccion.hints[field.name]}</span>
+          </label>
+        ),
+      )}
 
       {seccion.video && (
         <VideoField
           name="video_url"
-          label="Video (YouTube)"
+          label="Video"
           initial={values?.datos?.video_url ?? ""}
           hint={seccion.video}
+          onBusyChange={trackUpload}
+          onChange={() => setStatus({ kind: "idle" })}
         />
       )}
 
@@ -110,10 +103,10 @@ export default function ContentForm({
         )}
         <button
           type="submit"
-          disabled={pending}
+          disabled={pending || uploading}
           className="rounded-md bg-dlc-negro px-6 py-2.5 text-sm font-medium text-dlc-marfil transition-colors hover:bg-dlc-cuero disabled:opacity-60"
         >
-          {pending ? "Guardando…" : `Guardar ${seccion.label}`}
+          {pending ? "Guardando…" : uploading ? "Subiendo archivos…" : `Guardar ${seccion.label}`}
         </button>
       </div>
 

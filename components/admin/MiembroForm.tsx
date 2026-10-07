@@ -5,7 +5,8 @@ import { startTransition, useActionState, useState } from "react";
 import type { MiembroFormState } from "@/app/(admin)/admin/actions";
 import { AREAS, type Miembro } from "@/lib/equipo-types";
 import { hintClass, inputClass, labelClass } from "./form-styles";
-import ImagePreview from "./ImagePreview";
+import { useUploadCount } from "./DropArea";
+import ImageUploadField from "./ImageUploadField";
 
 const INITIAL: MiembroFormState = { error: null, saved: false };
 
@@ -18,7 +19,7 @@ export default function MiembroForm({
   miembro?: Miembro;
 }) {
   const [state, formAction, pending] = useActionState(action, INITIAL);
-  const [foto, setFoto] = useState(miembro?.foto_url ?? "");
+  const [uploading, trackUpload] = useUploadCount();
   // El aviso de "guardado" desaparece en cuanto se vuelve a editar.
   const [dirty, setDirty] = useState(false);
 
@@ -93,29 +94,16 @@ export default function MiembroForm({
             className={inputClass}
           />
         </label>
-        <label className="block sm:col-span-2">
-          <span className={labelClass}>Foto (opcional)</span>
-          <input
-            name="foto_url"
-            value={foto}
-            onChange={(e) => setFoto(e.target.value)}
-            maxLength={500}
-            placeholder="https://…supabase.co/storage/v1/object/public/media/…"
-            className={inputClass}
-          />
-          <span className={`block ${hintClass}`}>
-            Sube la foto en{" "}
-            <Link href="/admin/media" target="_blank" className="font-medium text-dlc-cuero underline">
-              Medios
-            </Link>
-            , pulsa «Copiar URL» y pégala aquí. Mejor vertical (retrato). Sin foto se muestran sus iniciales.
-          </span>
-          {foto && (
-            <div className="max-w-[200px]">
-              <ImagePreview url={foto} alt="Foto" />
-            </div>
-          )}
-        </label>
+        <ImageUploadField
+          name="foto_url"
+          label="Foto (opcional)"
+          initial={miembro?.foto_url ?? ""}
+          hint="Mejor vertical (retrato). Sin foto se muestran sus iniciales."
+          aspect="aspect-[3/4]"
+          className="max-w-[240px] sm:col-span-2"
+          onBusyChange={trackUpload}
+          onChange={() => setDirty(true)}
+        />
         <label className="flex items-center gap-3 sm:col-span-2">
           <input
             name="activo"
@@ -143,10 +131,10 @@ export default function MiembroForm({
         )}
         <button
           type="submit"
-          disabled={pending}
+          disabled={pending || uploading}
           className="rounded-md bg-dlc-negro px-6 py-2.5 text-sm font-medium text-dlc-marfil transition-colors hover:bg-dlc-cuero disabled:opacity-60"
         >
-          {pending ? "Guardando…" : miembro ? "Guardar" : "Agregar al equipo"}
+          {pending ? "Guardando…" : uploading ? "Subiendo foto…" : miembro ? "Guardar" : "Agregar al equipo"}
         </button>
       </div>
 

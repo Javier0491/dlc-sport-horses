@@ -3,8 +3,9 @@
 import Image from "next/image";
 import { useState } from "react";
 import { MAX_GALERIA } from "@/lib/caballos-types";
+import DropArea, { UploadIcon } from "./DropArea";
 import { hintClass } from "./form-styles";
-import { IMAGE_ACCEPT, uploadImageFile } from "./upload-image";
+import { IMAGE_ACCEPT, isImageFile, uploadImageFile } from "./upload-media";
 
 type Props = { initial: string[]; onBusyChange?: (busy: boolean) => void };
 
@@ -12,15 +13,12 @@ type Props = { initial: string[]; onBusyChange?: (busy: boolean) => void };
 // campo oculto "galeria"; el orden aquí es el orden en la ficha pública.
 export default function GalleryEditor({ initial, onBusyChange }: Props) {
   const [urls, setUrls] = useState(initial);
-  const [dragging, setDragging] = useState(false);
   const [pending, setPending] = useState(0);
   const [error, setError] = useState<string | null>(null);
 
   // Optimiza y sube las fotos una detrás de otra, añadiéndolas al final.
-  const addFiles = async (fileList: FileList | null) => {
-    const files = Array.from(fileList ?? []).filter(
-      (f) => f.type.startsWith("image/") || /\.(heic|heif)$/i.test(f.name),
-    );
+  const addFiles = async (fileList: FileList) => {
+    const files = Array.from(fileList).filter(isImageFile);
     if (!files.length) return;
     const room = MAX_GALERIA - urls.length - pending;
     const batch = files.slice(0, Math.max(0, room));
@@ -68,55 +66,26 @@ export default function GalleryEditor({ initial, onBusyChange }: Props) {
         la vez; se optimizan y se suben solas.
       </p>
 
-      <label
-        onDragOver={(event) => {
-          event.preventDefault();
-          setDragging(true);
-        }}
-        onDragLeave={() => setDragging(false)}
-        onDrop={(event) => {
-          event.preventDefault();
-          setDragging(false);
-          addFiles(event.dataTransfer.files);
-        }}
-        className={`mt-3 flex cursor-pointer flex-col items-center justify-center gap-2 rounded-md border-2 border-dashed bg-white px-6 py-8 text-center text-xs transition-colors ${
-          dragging ? "border-dlc-cuero bg-dlc-marfil" : "border-dlc-arena hover:border-dlc-cuero"
-        } ${urls.length >= MAX_GALERIA ? "pointer-events-none opacity-40" : ""}`}
+      <DropArea
+        accept={IMAGE_ACCEPT}
+        multiple
+        disabled={urls.length >= MAX_GALERIA}
+        onFiles={addFiles}
+        className="mt-3 flex-col gap-2 px-6 py-8 text-xs text-neutral-500"
       >
-        <input
-          type="file"
-          accept={IMAGE_ACCEPT}
-          multiple
-          className="sr-only"
-          disabled={urls.length >= MAX_GALERIA}
-          onChange={(event) => {
-            addFiles(event.target.files);
-            event.target.value = "";
-          }}
-        />
-        {pending > 0 ? (
-          <span className="h-6 w-6 animate-spin rounded-full border-2 border-neutral-300 border-t-dlc-cuero" />
-        ) : (
-          <svg
-            viewBox="0 0 24 24"
-            className="h-6 w-6 text-neutral-400"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth={1.5}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            aria-hidden="true"
-          >
-            <path d="M12 16V4M7 9l5-5 5 5" />
-            <path d="M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3" />
-          </svg>
+        {() => (
+          <>
+            <UploadIcon busy={pending > 0} />
+            <span className="font-medium text-neutral-600">
+              {pending > 0
+                ? `Subiendo ${pending} foto${pending === 1 ? "" : "s"}…`
+                : urls.length >= MAX_GALERIA
+                  ? `Galería completa (${MAX_GALERIA} fotos)`
+                  : "Arrastra fotos aquí o haz clic para elegirlas"}
+            </span>
+          </>
         )}
-        <span className="font-medium text-neutral-600">
-          {pending > 0
-            ? `Subiendo ${pending} foto${pending === 1 ? "" : "s"}…`
-            : "Arrastra fotos aquí o haz clic para elegirlas"}
-        </span>
-      </label>
+      </DropArea>
       {error && (
         <p role="alert" className="mt-2 text-xs text-red-600">
           {error}

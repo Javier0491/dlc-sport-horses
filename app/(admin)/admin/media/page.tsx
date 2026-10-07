@@ -1,12 +1,12 @@
 import MediaDropzone from "@/components/admin/MediaDropzone";
 import MediaGallery from "@/components/admin/MediaGallery";
-import { listImages, type MediaItem } from "@/lib/storage";
+import { listMedia, type MediaItem } from "@/lib/storage";
 
 export default async function MediaAdmin() {
   let items: MediaItem[] = [];
   let loadError: string | null = null;
   try {
-    items = await listImages();
+    items = await listMedia();
   } catch (err) {
     loadError = err instanceof Error ? err.message : "Error al cargar el bucket.";
   }
@@ -15,7 +15,7 @@ export default async function MediaAdmin() {
     <main className="mx-auto max-w-7xl px-6 py-10">
       <h1 className="text-2xl font-semibold">Medios</h1>
       <p className="mt-1 text-sm text-neutral-500">
-        Sube fotos y copia su URL para usarla en la base de datos.
+        Todas las fotos y videos subidos. Desde los formularios también se suben solos arrastrándolos.
       </p>
 
       <section className="mt-8">

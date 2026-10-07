@@ -42,14 +42,26 @@ function MediaCard({ item }: { item: MediaItem }) {
       }`}
     >
       <a href={item.url} target="_blank" rel="noreferrer" className="block bg-neutral-100">
-        {/* URL de Supabase Storage: no pasa por el optimizador de next/image */}
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={item.url}
-          alt={item.path}
-          loading="lazy"
-          className="aspect-[4/3] w-full object-cover"
-        />
+        {item.kind === "video" ? (
+          <video
+            src={item.url}
+            muted
+            playsInline
+            preload="metadata"
+            className="aspect-[4/3] w-full bg-black object-cover"
+          />
+        ) : (
+          <>
+            {/* URL de Supabase Storage: no pasa por el optimizador de next/image */}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={item.url}
+              alt={item.path}
+              loading="lazy"
+              className="aspect-[4/3] w-full object-cover"
+            />
+          </>
+        )}
       </a>
       <div className="space-y-2 p-3">
         <p className="truncate text-xs text-neutral-500" title={item.path}>
@@ -112,7 +124,7 @@ export default function MediaGallery({ items }: { items: MediaItem[] }) {
   if (items.length === 0) {
     return (
       <p className="mt-4 rounded-lg border border-neutral-200 p-10 text-center text-sm text-neutral-500">
-        Aún no hay imágenes en el bucket.
+        Aún no hay fotos ni videos subidos.
       </p>
     );
   }

@@ -4,8 +4,9 @@ import Link from "next/link";
 import { startTransition, useActionState, useState } from "react";
 import type { ConcursoFormState } from "@/app/(admin)/admin/actions";
 import { ESTADOS_CONCURSO, type Concurso } from "@/lib/concursos-types";
-import { hintClass, inputClass, labelClass } from "./form-styles";
-import ImagePreview from "./ImagePreview";
+import { inputClass, labelClass } from "./form-styles";
+import { useUploadCount } from "./DropArea";
+import ImageUploadField from "./ImageUploadField";
 import VideoField from "./VideoField";
 
 const INITIAL: ConcursoFormState = { error: null, saved: false };
@@ -19,7 +20,7 @@ export default function ConcursoForm({
   concurso?: Concurso;
 }) {
   const [state, formAction, pending] = useActionState(action, INITIAL);
-  const [imagen, setImagen] = useState(concurso?.imagen_url ?? "");
+  const [uploading, trackUpload] = useUploadCount();
   const [inicio, setInicio] = useState(concurso?.fecha_inicio ?? "");
   // El aviso de "guardado" desaparece en cuanto se vuelve a editar.
   const [dirty, setDirty] = useState(false);
@@ -86,34 +87,20 @@ export default function ConcursoForm({
             ))}
           </select>
         </label>
-        <label className="block sm:col-span-2">
-          <span className={labelClass}>Imagen (opcional)</span>
-          <input
-            name="imagen_url"
-            value={imagen}
-            onChange={(e) => setImagen(e.target.value)}
-            maxLength={500}
-            placeholder="https://…supabase.co/storage/v1/object/public/media/…"
-            className={inputClass}
-          />
-          <span className={`block ${hintClass}`}>
-            Sube la foto en{" "}
-            <Link href="/admin/media" target="_blank" className="font-medium text-dlc-cuero underline">
-              Medios
-            </Link>
-            , pulsa «Copiar URL» y pégala aquí.
-          </span>
-          {imagen && (
-            <div className="max-w-xs">
-              <ImagePreview url={imagen} alt="Imagen del concurso" />
-            </div>
-          )}
-        </label>
+        <ImageUploadField
+          name="imagen_url"
+          label="Imagen (opcional)"
+          initial={concurso?.imagen_url ?? ""}
+          className="max-w-sm sm:col-span-2"
+          onBusyChange={trackUpload}
+          onChange={() => setDirty(true)}
+        />
         <VideoField
           name="livestream_url"
           label="Transmisión en vivo (opcional)"
           initial={concurso?.livestream_url ?? ""}
           allowFile={false}
+          onChange={() => setDirty(true)}
           hint="Enlace de YouTube Live o Vimeo. Se muestra en la web mientras el concurso está «En curso». Con el enlace del canal (youtube.com/channel/…/live) sirve para todos los concursos."
         />
       </div>
@@ -134,10 +121,10 @@ export default function ConcursoForm({
         )}
         <button
           type="submit"
-          disabled={pending}
+          disabled={pending || uploading}
           className="rounded-md bg-dlc-negro px-6 py-2.5 text-sm font-medium text-dlc-marfil transition-colors hover:bg-dlc-cuero disabled:opacity-60"
         >
-          {pending ? "Guardando…" : concurso ? "Guardar concurso" : "Crear concurso"}
+          {pending ? "Guardando…" : uploading ? "Subiendo foto…" : concurso ? "Guardar concurso" : "Crear concurso"}
         </button>
       </div>
 

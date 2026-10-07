@@ -10,7 +10,7 @@ import {
   newSessionToken,
   requireAdmin,
 } from "@/lib/admin-auth";
-import { deleteImage, uploadImage, type MediaItem } from "@/lib/storage";
+import { createVideoUpload, deleteImage, uploadImage, type MediaItem } from "@/lib/storage";
 import {
   deleteCaballoRow,
   insertCaballo,
@@ -75,6 +75,21 @@ export async function uploadMedia(formData: FormData): Promise<Result<MediaItem>
     const item = await uploadImage(file);
     revalidatePath("/admin/media");
     return { ok: true, data: item };
+  } catch (err) {
+    return failure(err);
+  }
+}
+
+export async function prepareVideoUpload(
+  fileName: string,
+  type: string,
+  size: number,
+): Promise<Result<{ signedUrl: string; url: string }>> {
+  try {
+    await requireAdmin();
+    const upload = await createVideoUpload(String(fileName), String(type), Number(size));
+    revalidatePath("/admin/media");
+    return { ok: true, data: upload };
   } catch (err) {
     return failure(err);
   }

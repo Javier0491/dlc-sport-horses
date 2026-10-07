@@ -2,7 +2,15 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { uploadMedia } from "@/app/(admin)/admin/actions";
+import { MAX_VIDEO_MB } from "@/lib/media-limits";
+import {
+  IMAGE_ACCEPT,
+  isImageFile,
+  isVideoFile,
+  uploadImageFile,
+  uploadVideoFile,
+  VIDEO_ACCEPT,
+} from "./upload-media";
 
 type Upload = { name: string; status: "uploading" | "done" | "error"; error?: string };
 
@@ -18,7 +26,7 @@ export default function MediaDropzone() {
 
   // Sube en cuanto se sueltan los archivos, uno detrás de otro.
   const handleFiles = async (fileList: FileList | null) => {
-    const files = Array.from(fileList ?? []).filter((f) => f.type.startsWith("image/"));
+    const files = Array.from(fileList ?? []).filter((f) => isImageFile(f) || isVideoFile(f));
     if (files.length === 0) return;
 
     const offset = uploads.length;
@@ -28,17 +36,15 @@ export default function MediaDropzone() {
     ]);
 
     for (const [i, file] of files.entries()) {
-      const formData = new FormData();
-      formData.append("file", file);
       try {
-        const result = await uploadMedia(formData);
-        setStatus(
-          offset + i,
-          result.ok ? { status: "done" } : { status: "error", error: result.error },
-        );
-      } catch {
-        // Ej. archivo mayor que el límite de las Server Actions o sin conexión.
-        setStatus(offset + i, { status: "error", error: "No se pudo subir." });
+        if (isVideoFile(file)) await uploadVideoFile(file);
+        else await uploadImageFile(file);
+        setStatus(offset + i, { status: "done" });
+      } catch (err) {
+        setStatus(offset + i, {
+          status: "error",
+          error: err instanceof Error ? err.message : "No se pudo subir.",
+        });
       }
     }
     router.refresh();
@@ -65,7 +71,7 @@ export default function MediaDropzone() {
       >
         <input
           type="file"
-          accept="image/jpeg,image/png,image/webp,image/avif"
+          accept={`${IMAGE_ACCEPT},${VIDEO_ACCEPT}`}
           multiple
           className="sr-only"
           onChange={(event) => {
@@ -91,9 +97,9 @@ export default function MediaDropzone() {
           </svg>
         )}
         <p className="mt-4 text-sm font-medium">
-          {busy ? "Subiendo…" : "Arrastra fotos aquí o haz clic para elegirlas"}
+          {busy ? "Subiendo…" : "Arrastra fotos o videos aquí o haz clic para elegirlos"}
         </p>
-        <p className="mt-1 text-xs text-neutral-500">JPG, PNG, WEBP o AVIF · máx. 8 MB</p>
+        <p className="mt-1 text-xs text-neutral-500">Fotos (se optimizan solas) · Videos MP4, MOV o WEBM hasta {MAX_VIDEO_MB} MB</p>
       </label>
 
       {uploads.length > 0 && (
