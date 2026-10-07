@@ -11,7 +11,7 @@ import {
 } from "@/lib/caballos-types";
 import { hintClass, inputClass, labelClass } from "./form-styles";
 import { useUploadCount } from "./DropArea";
-import GalleryEditor from "./GalleryEditor";
+import GallerySectionsEditor from "./GallerySectionsEditor";
 import ImageUploadField from "./ImageUploadField";
 import VideoField from "./VideoField";
 
@@ -222,11 +222,18 @@ export default function HorseForm({ action, caballo, opciones }: Props) {
           initial={caballo?.retrato_url ?? ""}
           onBusyChange={trackUpload}
         />
-        <GalleryEditor initial={caballo?.galeria ?? []} onBusyChange={trackUpload} />
         <VideoField
           name="video_url"
           label="Video del caballo"
           initial={caballo?.video_url ?? ""}
+          onBusyChange={trackUpload}
+        />
+      </Section>
+
+      <Section title="Galería «Conoce a…» (secciones desplegables)">
+        <GallerySectionsEditor
+          initial={caballo?.galeria_secciones ?? null}
+          legacy={caballo?.galeria ?? []}
           onBusyChange={trackUpload}
         />
       </Section>

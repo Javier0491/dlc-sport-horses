@@ -20,7 +20,8 @@ export type Caballo = {
   precio_rango: number | null;
   imagen_url: string | null;
   retrato_url: string | null;
-  galeria: string[];
+  galeria: string[]; // galería anterior (sin secciones); se pasa a «Primera Impresión» al guardar
+  galeria_secciones: GaleriaSecciones | null; // null/ausente antes de ejecutar schema.sql
   padre_id: string | null;
   madre_id: string | null;
   activo: boolean;
@@ -36,7 +37,37 @@ export type Caballo = {
 // Lo que escribe el panel: la base de datos pone creado_en y actualizado_en.
 export type CaballoInput = Omit<Caballo, "creado_en" | "actualizado_en">;
 
-// Fotos de la galería de un caballo (además de la principal y el retrato).
-export const MAX_GALERIA = 24;
+// Galería de la ficha, dividida en secciones desplegables para no saturarla.
+// El texto de cada sección es opcional; la sugerencia orienta qué fotos van ahí.
+export const SECCIONES_GALERIA = [
+  {
+    key: "primera_impresion",
+    label: "Primera Impresión",
+    sugerencia: "Fotos de conformación: de perfil, de frente y de cuerpo completo.",
+  },
+  {
+    key: "presencia",
+    label: "Presencia",
+    sugerencia: "Retratos, la cabeza, su actitud, en libertad o en la manada.",
+  },
+  {
+    key: "potencial",
+    label: "Potencial",
+    sugerencia: "Movimiento, salto en libertad, trabajo y entrenamiento.",
+  },
+  {
+    key: "escenario",
+    label: "Su escenario",
+    sugerencia: "En pista y en concursos: recorridos, premiaciones, competencias.",
+  },
+] as const;
+
+export type SeccionGaleriaKey = (typeof SECCIONES_GALERIA)[number]["key"];
+export type SeccionGaleria = { texto: string | null; fotos: string[] };
+export type GaleriaSecciones = Partial<Record<SeccionGaleriaKey, SeccionGaleria>>;
+
+// Fotos por sección de la galería (además de la principal y el retrato).
+export const MAX_GALERIA = 12;
+export const MAX_TEXTO_SECCION = 400;
 
 export type CaballoOpcion = Pick<Caballo, "id" | "nombre" | "categoria">;

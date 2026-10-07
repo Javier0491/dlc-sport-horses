@@ -3,13 +3,15 @@ import { parseVideo } from "@/lib/video";
 import HorseGallery from "./HorseGallery";
 import VideoPlayer from "./VideoPlayer";
 
-// Banda oscura de la ficha: video del caballo y galería interactiva.
-// Fotos = principal + retrato + galería del panel (sin repetir). No se muestra si
-// el caballo no tiene ni video ni al menos dos fotos.
+// Banda oscura de la ficha: video del caballo y galería («Conoce a…»): foto
+// principal + retrato y las secciones desplegables cargadas en el panel.
+// No se muestra si no hay video, ni retrato, ni secciones (la portada ya
+// enseña la foto principal).
 export default function HorseMedia({ horse }: { horse: Horse }) {
   const video = parseVideo(horse.video);
-  const images = [...new Set([horse.image, horse.portrait, ...horse.gallery].filter((u): u is string => !!u))];
-  if (!video && images.length < 2) return null;
+  const sections = horse.gallery;
+  if (!video && !horse.portrait && sections.length === 0) return null;
+  const hasPhotos = Boolean(horse.image || horse.portrait || sections.length);
 
   return (
     <section className="bg-dlc-negro px-6 py-20 sm:py-28">
@@ -30,11 +32,24 @@ export default function HorseMedia({ horse }: { horse: Horse }) {
           </div>
         )}
 
-        {images.length > 1 && (
-          <div className="mt-6">
-            <HorseGallery images={images} name={horse.name} />
-            <p className="mt-4 text-center text-[10px] uppercase tracking-[0.35em] text-dlc-marfil/40">
-              {images.length} fotos · toca una para ampliarla
+        {hasPhotos && (
+          <div className={video ? "mt-6" : "mt-14"}>
+            <HorseGallery
+              name={horse.name}
+              main={horse.image}
+              portrait={horse.portrait}
+              sections={sections}
+            />
+            <p className="mt-6 text-center text-[10px] uppercase tracking-[0.35em] text-dlc-marfil/40">
+              {sections.length > 0 ? (
+                <>
+                  <span className="hidden md:inline">Pasa el cursor por cada sección para verla</span>
+                  <span className="md:hidden">Toca cada sección para verla</span>
+                  {" · toca una foto para ampliarla"}
+                </>
+              ) : (
+                "Toca una foto para ampliarla"
+              )}
             </p>
           </div>
         )}

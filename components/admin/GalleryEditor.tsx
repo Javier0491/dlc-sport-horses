@@ -7,11 +7,26 @@ import DropArea, { UploadIcon } from "./DropArea";
 import { hintClass } from "./form-styles";
 import { IMAGE_ACCEPT, isImageFile, uploadImageFile } from "./upload-media";
 
-type Props = { initial: string[]; onBusyChange?: (busy: boolean) => void };
+type Props = {
+  name: string; // campo oculto del formulario (JSON con la lista de URLs)
+  label: string;
+  hint?: string;
+  dropLabel?: string;
+  initial: string[];
+  onBusyChange?: (busy: boolean) => void;
+};
 
-// Galería ordenada de un caballo. Se envía con el formulario como JSON en un
-// campo oculto "galeria"; el orden aquí es el orden en la ficha pública.
-export default function GalleryEditor({ initial, onBusyChange }: Props) {
+// Lista ordenada de fotos (una sección de la galería de un caballo). Se envía
+// con el formulario como JSON en un campo oculto; el orden aquí es el orden en
+// la ficha pública.
+export default function GalleryEditor({
+  name,
+  label,
+  hint,
+  dropLabel = "Arrastra fotos aquí o haz clic para elegirlas",
+  initial,
+  onBusyChange,
+}: Props) {
   const [urls, setUrls] = useState(initial);
   const [pending, setPending] = useState(0);
   const [error, setError] = useState<string | null>(null);
@@ -23,7 +38,7 @@ export default function GalleryEditor({ initial, onBusyChange }: Props) {
     const room = MAX_GALERIA - urls.length - pending;
     const batch = files.slice(0, Math.max(0, room));
     const errors: string[] = [];
-    if (files.length > batch.length) errors.push(`La galería admite hasta ${MAX_GALERIA} fotos.`);
+    if (files.length > batch.length) errors.push(`«${label}» admite hasta ${MAX_GALERIA} fotos.`);
     if (!batch.length) {
       setError(errors[0]);
       return;
@@ -53,18 +68,15 @@ export default function GalleryEditor({ initial, onBusyChange }: Props) {
   };
 
   return (
-    <div className="sm:col-span-2">
-      <input type="hidden" name="galeria" value={JSON.stringify(urls)} />
+    <div>
+      <input type="hidden" name={name} value={JSON.stringify(urls)} />
       <div className="flex items-baseline justify-between gap-4">
-        <span className="block text-sm font-medium text-dlc-negro">Galería de fotos</span>
+        <span className="block text-sm font-medium text-dlc-negro">{label}</span>
         <span className="text-xs text-neutral-500">
           {urls.length} / {MAX_GALERIA}
         </span>
       </div>
-      <p className={hintClass}>
-        Se muestran en la ficha junto a la foto principal y el retrato. Arrastra varias fotos a
-        la vez; se optimizan y se suben solas.
-      </p>
+      {hint && <p className={hintClass}>{hint}</p>}
 
       <DropArea
         accept={IMAGE_ACCEPT}
@@ -80,8 +92,8 @@ export default function GalleryEditor({ initial, onBusyChange }: Props) {
               {pending > 0
                 ? `Subiendo ${pending} foto${pending === 1 ? "" : "s"}…`
                 : urls.length >= MAX_GALERIA
-                  ? `Galería completa (${MAX_GALERIA} fotos)`
-                  : "Arrastra fotos aquí o haz clic para elegirlas"}
+                  ? `Sección completa (${MAX_GALERIA} fotos)`
+                  : dropLabel}
             </span>
           </>
         )}

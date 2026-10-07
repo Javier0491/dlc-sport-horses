@@ -2,8 +2,8 @@
 // Usa la anon key. Además del RLS, cada consulta filtra activo = true: un caballo oculto
 // en el panel nunca debe llegar a la web aunque cambien las políticas.
 import { cache } from "react";
-import type { Caballo, Categoria } from "./caballos-types";
-import type { Ancestor, Horse, Offspring } from "./catalog";
+import { SECCIONES_GALERIA, type Caballo, type Categoria } from "./caballos-types";
+import type { Ancestor, GallerySection, Horse, Offspring } from "./catalog";
 import type { Configuracion } from "./contenido-types";
 import { hoyEnMexico, type Concurso, type Prueba } from "./concursos-types";
 import type { Miembro } from "./equipo-types";
@@ -54,6 +54,21 @@ function tree(
   return { name: row.nombre, sire: parent(row.padre_id), dam: parent(row.madre_id) };
 }
 
+// Secciones de la galería en su orden fijo. La galería anterior (sin secciones)
+// se muestra en «Primera Impresión» hasta que se guarde el caballo en el panel.
+function gallerySections(c: Caballo): GallerySection[] {
+  const saved = c.galeria_secciones ?? {};
+  return SECCIONES_GALERIA.flatMap(({ key, label }) => {
+    const section = saved[key];
+    const photos = [
+      ...(section?.fotos ?? []),
+      ...(key === "primera_impresion" ? (c.galeria ?? []) : []),
+    ];
+    const text = section?.texto?.trim() || null;
+    return photos.length || text ? [{ key, label, text, photos: [...new Set(photos)] }] : [];
+  });
+}
+
 function toHorse(c: Caballo, pedigri: Map<string, PedigriRow>): Horse {
   return {
     id: c.id,
@@ -70,7 +85,7 @@ function toHorse(c: Caballo, pedigri: Map<string, PedigriRow>): Horse {
     priceLevel: c.precio_rango,
     image: c.imagen_url,
     portrait: c.retrato_url,
-    gallery: c.galeria,
+    gallery: gallerySections(c),
     sire: tree(c.padre_id, pedigri, GENERATIONS),
     dam: tree(c.madre_id, pedigri, GENERATIONS),
     // "?? null": antes de ejecutar schema.sql estas columnas aún no existen.

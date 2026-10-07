@@ -2,23 +2,93 @@
 
 import Image from "next/image";
 import { useCallback, useEffect, useRef, useState } from "react";
+import type { GallerySection } from "@/lib/catalog";
 
-// Mosaico de fotos (la primera grande) + visor a pantalla completa con flechas,
-// teclado (← → Esc), deslizamiento en móvil y tira de miniaturas.
-const VISIBLE = 5; // fotos en el mosaico; el resto se ve en el visor ("+N")
+// Galería de la ficha: foto principal (3:2, el caballo completo) y retrato, y
+// debajo las secciones desplegables («Primera Impresión», «Presencia»…). Con
+// ratón, una sección se abre al pasar por encima y se cierra al pasar a otra;
+// en pantallas táctiles se abre y cierra tocándola. Cualquier foto abre el
+// visor a pantalla completa (flechas, teclado ← → Esc, deslizar en móvil).
 
-export default function HorseGallery({ images, name }: { images: string[]; name: string }) {
+const HOVER_DELAY_MS = 120; // evita abrir secciones al cruzarlas de pasada
+
+function Thumb({
+  src,
+  alt,
+  sizes,
+  onOpen,
+  className = "",
+}: {
+  src: string;
+  alt: string;
+  sizes: string;
+  onOpen: () => void;
+  className?: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onOpen}
+      aria-label={`Ampliar: ${alt}`}
+      className={`group relative block w-full overflow-hidden bg-dlc-negro ${className}`}
+    >
+      <Image
+        src={src}
+        alt={alt}
+        fill
+        sizes={sizes}
+        className="object-cover transition-transform duration-[1200ms] ease-out group-hover:scale-105"
+      />
+      <span className="absolute inset-0 bg-dlc-negro/0 transition-colors duration-500 group-hover:bg-dlc-negro/25" />
+      <span className="absolute inset-0 flex items-center justify-center opacity-0 transition-opacity duration-500 group-hover:opacity-100">
+        <span className="flex h-12 w-12 items-center justify-center rounded-full border border-dlc-oro/80 text-dlc-oro backdrop-blur-sm">
+          <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={1.5} aria-hidden="true">
+            <circle cx="11" cy="11" r="6" />
+            <path d="m20 20-4.5-4.5M11 8v6M8 11h6" />
+          </svg>
+        </span>
+      </span>
+    </button>
+  );
+}
+
+export default function HorseGallery({
+  name,
+  main,
+  portrait,
+  sections,
+}: {
+  name: string;
+  main: string | null;
+  portrait: string | null;
+  sections: GallerySection[];
+}) {
+  // Todas las fotos en orden para el visor (sin repetir).
+  const images = [
+    ...new Set([main, portrait, ...sections.flatMap((s) => s.photos)].filter((u): u is string => !!u)),
+  ];
+
   const dialog = useRef<HTMLDialogElement>(null);
   const [index, setIndex] = useState(0);
   const touchX = useRef<number | null>(null);
+  const [openKey, setOpenKey] = useState<string | null>(null);
+  const hoverTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const canHover = useRef(false);
+
+  useEffect(() => {
+    canHover.current = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
+    return () => {
+      if (hoverTimer.current) clearTimeout(hoverTimer.current);
+    };
+  }, []);
 
   const go = useCallback(
     (step: number) => setIndex((i) => (i + step + images.length) % images.length),
     [images.length],
   );
 
-  const open = (i: number) => {
-    setIndex(i);
+  const openViewer = (src: string) => {
+    setIndex(Math.max(0, images.indexOf(src)));
     dialog.current?.showModal();
   };
 
@@ -34,46 +104,127 @@ export default function HorseGallery({ images, name }: { images: string[]; name:
     return () => el.removeEventListener("keydown", onKey);
   }, [go]);
 
+  const hoverOpen = (key: string) => {
+    if (!canHover.current) return;
+    if (hoverTimer.current) clearTimeout(hoverTimer.current);
+    hoverTimer.current = setTimeout(() => setOpenKey(key), HOVER_DELAY_MS);
+  };
+  const cancelHover = () => {
+    if (hoverTimer.current) clearTimeout(hoverTimer.current);
+  };
+  // Con ratón el clic solo abre (ya se abrió al pasar); en táctil abre y cierra.
+  const toggle = (key: string) =>
+    setOpenKey((current) => (current === key && !canHover.current ? null : key));
+
   if (images.length === 0) return null;
-  const extra = images.length - VISIBLE;
 
   return (
     <>
-      <ul className="grid auto-rows-[160px] grid-cols-2 gap-3 sm:auto-rows-[200px] md:grid-cols-4">
-        {images.slice(0, VISIBLE).map((src, i) => (
-          <li key={src} className={i === 0 ? "col-span-2 row-span-2" : ""}>
-            <button
-              type="button"
-              onClick={() => open(i)}
-              aria-label={`Ver foto ${i + 1} de ${images.length} de ${name}`}
-              className="group relative block h-full w-full overflow-hidden bg-dlc-negro"
-            >
-              <Image
-                src={src}
-                alt={`${name}, foto ${i + 1}`}
-                fill
-                sizes={i === 0 ? "(min-width: 768px) 50vw, 100vw" : "(min-width: 768px) 25vw, 50vw"}
-                className="object-cover transition-transform duration-[1200ms] ease-out group-hover:scale-110"
-              />
-              <span className="absolute inset-0 bg-dlc-negro/0 transition-colors duration-500 group-hover:bg-dlc-negro/30" />
-              {/* Lupa al pasar el ratón */}
-              <span className="absolute inset-0 flex items-center justify-center opacity-0 transition-opacity duration-500 group-hover:opacity-100">
-                <span className="flex h-12 w-12 items-center justify-center rounded-full border border-dlc-oro/80 text-dlc-oro backdrop-blur-sm">
-                  <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={1.5} aria-hidden="true">
-                    <circle cx="11" cy="11" r="6" />
-                    <path d="m20 20-4.5-4.5M11 8v6M8 11h6" />
-                  </svg>
-                </span>
-              </span>
-              {i === VISIBLE - 1 && extra > 0 && (
-                <span className="absolute inset-0 flex items-center justify-center bg-dlc-negro/60 font-serif text-3xl text-dlc-marfil">
-                  +{extra}
-                </span>
-              )}
-            </button>
-          </li>
-        ))}
-      </ul>
+      {(main || portrait) && (
+        <div className={`grid gap-3 ${main && portrait ? "md:grid-cols-[2fr_1fr]" : ""}`}>
+          {main && (
+            <Thumb
+              src={main}
+              alt={`${name}, foto principal`}
+              sizes="(min-width: 768px) 66vw, 100vw"
+              onOpen={() => openViewer(main)}
+              className="aspect-[3/2]"
+            />
+          )}
+          {portrait && (
+            <Thumb
+              src={portrait}
+              alt={`${name}, retrato`}
+              sizes="(min-width: 768px) 33vw, 100vw"
+              onOpen={() => openViewer(portrait)}
+              className={main ? "aspect-[3/4] md:aspect-auto md:h-full" : "aspect-[3/4] md:max-w-sm"}
+            />
+          )}
+        </div>
+      )}
+
+      {sections.length > 0 && (
+        <ul className="mt-10 border-b border-dlc-oro/20" onMouseLeave={cancelHover}>
+          {sections.map((section, i) => {
+            const open = openKey === section.key;
+            const panelId = `galeria-${section.key}`;
+            return (
+              <li
+                key={section.key}
+                className="border-t border-dlc-oro/20"
+                onMouseEnter={() => hoverOpen(section.key)}
+                onMouseLeave={cancelHover}
+              >
+                <button
+                  type="button"
+                  onClick={() => toggle(section.key)}
+                  // Con teclado (Tab) se abre al enfocarla; con toque o clic decide onClick.
+                  onFocus={(e) => e.currentTarget.matches(":focus-visible") && setOpenKey(section.key)}
+                  aria-expanded={open}
+                  aria-controls={panelId}
+                  className="group flex w-full items-center gap-5 py-6 text-left sm:gap-8 sm:py-7"
+                >
+                  <span className="font-serif text-sm tabular-nums text-dlc-oro/70">
+                    {String(i + 1).padStart(2, "0")}
+                  </span>
+                  <span
+                    className={`flex-1 font-serif text-2xl font-light transition-colors duration-500 sm:text-4xl ${
+                      open ? "text-dlc-oro" : "text-dlc-marfil group-hover:text-dlc-oro"
+                    }`}
+                  >
+                    {section.label}
+                  </span>
+                  {section.photos.length > 0 && (
+                    <span className="hidden text-[10px] uppercase tracking-[0.35em] text-dlc-marfil/40 sm:inline">
+                      {section.photos.length} {section.photos.length === 1 ? "foto" : "fotos"}
+                    </span>
+                  )}
+                  <span
+                    aria-hidden="true"
+                    className={`relative h-4 w-4 shrink-0 text-dlc-oro transition-transform duration-500 ${open ? "rotate-45" : ""}`}
+                  >
+                    <span className="absolute top-1/2 left-0 h-px w-full bg-current" />
+                    <span className="absolute top-0 left-1/2 h-full w-px bg-current" />
+                  </span>
+                </button>
+
+                {/* grid-rows 0fr → 1fr: se despliega con la altura real del contenido */}
+                <div
+                  id={panelId}
+                  role="region"
+                  aria-label={section.label}
+                  className={`grid transition-[grid-template-rows,opacity] duration-700 ease-out ${
+                    open ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
+                  }`}
+                >
+                  <div className="overflow-hidden" inert={!open}>
+                    <div className="pb-8">
+                      {section.text && (
+                        <p className="mb-6 max-w-3xl leading-8 text-dlc-marfil/75">{section.text}</p>
+                      )}
+                      {section.photos.length > 0 && (
+                        <ul className="grid grid-cols-2 gap-3 md:grid-cols-4">
+                          {section.photos.map((src, n) => (
+                            <li key={src}>
+                              <Thumb
+                                src={src}
+                                alt={`${name}, ${section.label}, foto ${n + 1}`}
+                                sizes="(min-width: 768px) 25vw, 50vw"
+                                onOpen={() => openViewer(src)}
+                                className="aspect-[3/2]"
+                              />
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      )}
 
       <dialog
         ref={dialog}

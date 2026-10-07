@@ -1,6 +1,6 @@
 // Modelo del catálogo público y utilidades sin dependencias de servidor:
 // lo usan tanto las páginas (que leen de Supabase en lib/data.ts) como los componentes cliente.
-import type { Categoria, Sexo } from "./caballos-types";
+import type { Categoria, SeccionGaleriaKey, Sexo } from "./caballos-types";
 import { slugify } from "./slug";
 
 export { slugify };
@@ -31,13 +31,21 @@ export type Horse = {
   priceLevel: number | null; // 1-5; null si no se publica precio
   image: string | null;
   portrait: string | null;
-  gallery: string[];
+  gallery: GallerySection[]; // solo las secciones con fotos o texto, en orden
   sire: Ancestor | null;
   dam: Ancestor | null;
   level: string | null; // nivel deportivo actual: '1.30 m', 'Jóvenes caballos'
   video: string | null; // enlace de YouTube/Vimeo/.mp4 (ver lib/video.ts)
   // Cruza anunciada en preventa (solo si está activa y tiene yegua).
   presale: { mare: string; year: number | null } | null;
+};
+
+// Una sección desplegable de la galería («Primera Impresión», «Presencia»…).
+export type GallerySection = {
+  key: SeccionGaleriaKey;
+  label: string;
+  text: string | null;
+  photos: string[];
 };
 
 // Un hijo destacado en la ficha de su padre o madre.

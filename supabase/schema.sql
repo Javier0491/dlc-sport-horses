@@ -116,6 +116,10 @@ alter table public.caballos add column if not exists preventa_anio smallint
 alter table public.caballos add column if not exists video_url text
   check (char_length(video_url) <= 500);
 
+-- Galería por secciones desplegables de la ficha (Primera Impresión, Presencia,
+-- Potencial, Su escenario): { "presencia": { "texto": "…", "fotos": ["https://…"] } }.
+alter table public.caballos add column if not exists galeria_secciones jsonb not null default '{}'::jsonb;
+
 create index if not exists caballos_categoria_activos_idx
   on public.caballos (categoria) where activo;
 create index if not exists caballos_padre_idx on public.caballos (padre_id);

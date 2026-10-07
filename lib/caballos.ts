@@ -2,10 +2,13 @@
 import {
   CATEGORIAS,
   MAX_GALERIA,
+  MAX_TEXTO_SECCION,
+  SECCIONES_GALERIA,
   SEXOS,
   type Caballo,
   type CaballoInput,
   type CaballoOpcion,
+  type GaleriaSecciones,
 } from "./caballos-types";
 import { isAllowedImageUrl } from "./image-url";
 import { slugify } from "./slug";
@@ -118,22 +121,35 @@ function imageUrl(form: FormData, key: string, label: string) {
   return value;
 }
 
-// La galería llega como JSON (lista ordenada de URLs) desde el editor del panel.
-function gallery(form: FormData): string[] {
+// Cada sección de la galería llega como JSON (lista ordenada de URLs) desde el editor del panel.
+function photoList(form: FormData, key: string, label: string): string[] {
+  const unreadable = new Error(`${label}: las fotos no se pudieron leer. Recarga la página e inténtalo de nuevo.`);
   let urls: unknown;
   try {
-    urls = JSON.parse(String(form.get("galeria") ?? "[]"));
+    urls = JSON.parse(String(form.get(key) ?? "[]"));
   } catch {
-    throw new Error("La galería no se pudo leer. Recarga la página e inténtalo de nuevo.");
+    throw unreadable;
   }
-  if (!Array.isArray(urls) || urls.some((u) => typeof u !== "string")) {
-    throw new Error("La galería no se pudo leer. Recarga la página e inténtalo de nuevo.");
-  }
+  if (!Array.isArray(urls) || urls.some((u) => typeof u !== "string")) throw unreadable;
   const unique = [...new Set(urls.map((u: string) => u.trim()).filter(Boolean))];
-  if (unique.length > MAX_GALERIA) throw new Error(`La galería admite hasta ${MAX_GALERIA} fotos.`);
-  const bad = unique.find((u) => !isAllowedImageUrl(u));
-  if (bad) throw new Error("Galería: hay una foto que no es de la sección Medios. Quítala y vuelve a añadirla.");
+  if (unique.length > MAX_GALERIA) throw new Error(`${label}: admite hasta ${MAX_GALERIA} fotos.`);
+  if (unique.some((u) => !isAllowedImageUrl(u))) {
+    throw new Error(`${label}: hay una foto que no es de Medios. Quítala y vuelve a subirla.`);
+  }
   return unique;
+}
+
+function gallerySections(form: FormData): GaleriaSecciones {
+  const sections: GaleriaSecciones = {};
+  for (const { key, label } of SECCIONES_GALERIA) {
+    const fotos = photoList(form, `galeria_${key}`, label);
+    const texto = text(form, `galeria_${key}_texto`);
+    if (texto && texto.length > MAX_TEXTO_SECCION) {
+      throw new Error(`${label}: el texto admite hasta ${MAX_TEXTO_SECCION} caracteres.`);
+    }
+    if (fotos.length || texto) sections[key] = { texto, fotos };
+  }
+  return sections;
 }
 
 function video(form: FormData) {
@@ -207,7 +223,8 @@ export function parseCaballoForm(form: FormData, id?: string): CaballoInput {
     preventa_activa,
     preventa_pareja,
     preventa_anio,
-    galeria: gallery(form),
+    galeria: [], // la galería anterior ya va dentro de «Primera Impresión»
+    galeria_secciones: gallerySections(form),
     video_url: video(form),
   };
 }
