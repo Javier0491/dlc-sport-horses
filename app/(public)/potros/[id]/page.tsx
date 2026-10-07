@@ -85,34 +85,28 @@ export default async function FichaPotro({
 
   return (
     <main className="flex-1">
-      {/* Hero */}
-      <section className="relative h-[70vh] min-h-[480px] w-full overflow-hidden bg-dlc-negro">
+      {/* Portada a pantalla completa, como la de inicio */}
+      <section className="relative h-screen min-h-[560px] w-full overflow-hidden bg-dlc-negro">
         {foal.image && (
-          <>
-            {/* Fondo: la misma foto desenfocada rellena los lados */}
-            <Image
-              src={foal.image}
-              alt=""
-              aria-hidden="true"
-              fill
-              sizes="50vw"
-              className="scale-110 object-cover opacity-50 blur-2xl"
-            />
-            {/* La foto horizontal completa, sin recortes */}
-            <Image
-              src={foal.image}
-              alt={foal.name}
-              fill
-              sizes="100vw"
-              loading="eager"
-              fetchPriority="high"
-              className="object-contain object-top sm:object-center"
-            />
-          </>
+          // Parallax al hacer scroll (exterior) y zoom lento al cargar (interior).
+          <div className="parallax absolute inset-0">
+            <div className="enter-photo absolute inset-0">
+              <Image
+                src={foal.image}
+                alt={foal.name}
+                fill
+                sizes="100vw"
+                loading="eager"
+                fetchPriority="high"
+                className="object-cover object-center"
+              />
+            </div>
+          </div>
         )}
-        <div className="absolute inset-0 bg-gradient-to-t from-dlc-negro/85 via-dlc-negro/10 via-35% to-transparent" />
+        <div className="absolute inset-0 bg-dlc-negro/25" />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-transparent to-dlc-negro/90" />
 
-        <div className="relative z-10 mx-auto flex h-full max-w-7xl flex-col justify-end px-6 pb-12">
+        <div className="hero-out relative z-10 mx-auto flex h-full max-w-7xl flex-col justify-end px-6 pb-16">
           <Link
             href="/potros"
             className="text-[11px] uppercase tracking-[0.4em] text-dlc-marfil/70 transition-colors hover:text-dlc-oro"

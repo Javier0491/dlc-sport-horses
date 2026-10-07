@@ -74,7 +74,9 @@ export default function Navbar() {
 
   const isActive = (href: string) =>
     pathname === href || pathname.startsWith(`${href}/`);
-  const light = HERO_PAGES.includes(pathname) && !scrolled && !open;
+  // Las fichas de potro (/potros/<id>) también abren con su foto a pantalla completa.
+  const overHero = HERO_PAGES.includes(pathname) || pathname.startsWith("/potros/");
+  const light = overHero && !scrolled && !open;
 
   return (
     <nav
