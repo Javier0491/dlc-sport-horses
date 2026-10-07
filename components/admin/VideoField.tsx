@@ -1,11 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { MAX_VIDEO_MB } from "@/lib/media-limits";
 import { parseVideo, VIDEO_HINT } from "@/lib/video";
 import DropArea, { UploadIcon } from "./DropArea";
 import { hintClass, inputClass, labelClass } from "./form-styles";
-import { uploadVideoFile, VIDEO_ACCEPT } from "./upload-media";
+import { uploadVideoFile, VIDEO_ACCEPT, videoLimitLabel } from "./upload-media";
 
 const SOURCE = { youtube: "YouTube", vimeo: "Vimeo", file: "archivo de video" } as const;
 
@@ -148,7 +147,7 @@ export default function VideoField({
                   <span className="font-medium text-neutral-600">
                     Arrastra el video aquí o haz clic para elegirlo
                   </span>
-                  <span>MP4, MOV o WEBM · máx. {MAX_VIDEO_MB} MB</span>
+                  <span>MP4, MOV o WEBM · máx. {videoLimitLabel()}</span>
                 </>
               )
             }

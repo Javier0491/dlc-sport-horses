@@ -9,6 +9,8 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1147.0",
+    "@aws-sdk/s3-request-presigner": "^3.1147.0",
     "@google/model-viewer": "^4.3.1",
     "@supabase/supabase-js": "^2.117.2",
     "framer-motion": "^14.0.0",

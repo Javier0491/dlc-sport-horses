@@ -20,6 +20,11 @@ const nextConfig: NextConfig = {
         hostname: "images.unsplash.com",
       },
       {
+        // Cloudflare R2: subdominio público r2.dev del bucket (multimedia pesada).
+        protocol: "https",
+        hostname: "pub-*.r2.dev",
+      },
+      {
         protocol: "https",
         hostname: supabaseHost,
         pathname: "/storage/v1/object/public/**",

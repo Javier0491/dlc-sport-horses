@@ -1,6 +1,8 @@
-// Biblioteca de medios (fotos y videos) en Supabase Storage (bucket público "media").
+// Biblioteca de medios (fotos y videos): Supabase Storage (bucket público "media")
+// y Cloudflare R2 para lo que se sube desde el panel cuando está configurado.
 // Solo se usa en el servidor: escribe con la service role key, que nunca llega al navegador.
 import { MAX_IMAGE_BYTES, MAX_VIDEO_BYTES, MAX_VIDEO_MB } from "./media-limits";
+import { deleteR2Object, isPanelKey, isR2Configured, listR2Objects, r2PublicUrl } from "./r2";
 import { slugify } from "./slug";
 import { supabaseAdmin } from "./supabase-admin";
 
@@ -25,6 +27,7 @@ export type MediaItem = {
   size: number;
   createdAt: string | null;
   kind: "image" | "video";
+  store: "supabase" | "r2";
 };
 
 function bucket() {
@@ -75,6 +78,7 @@ export async function uploadImage(file: File): Promise<MediaItem> {
     size: file.size,
     createdAt: new Date().toISOString(),
     kind: "image",
+    store: "supabase",
   };
 }
 
@@ -119,6 +123,7 @@ export async function listMedia(): Promise<MediaItem[]> {
       size: Number(file.metadata?.size ?? 0),
       createdAt: file.created_at ?? null,
       kind: VIDEO_EXT.test(file.name) ? ("video" as const) : ("image" as const),
+      store: "supabase" as const,
     }));
 }
 
@@ -129,4 +134,25 @@ export async function deleteImage(path: string): Promise<void> {
   }
   const { error } = await bucket().remove([path]);
   if (error) throw new Error(`No se pudo eliminar la imagen: ${error.message}`);
+}
+
+// Lo subido a Cloudflare R2 (carpetas fotos/ y videos/), con el mismo formato.
+export async function listR2Media(): Promise<MediaItem[]> {
+  if (!isR2Configured()) return [];
+  const objects = await listR2Objects();
+  return objects
+    .filter((o) => isPanelKey(o.key))
+    .map((o) => ({
+      path: o.key,
+      url: r2PublicUrl(o.key),
+      size: o.size,
+      createdAt: o.lastModified,
+      kind: o.key.startsWith("videos/") ? ("video" as const) : ("image" as const),
+      store: "r2" as const,
+    }));
+}
+
+export async function deleteR2Media(key: string): Promise<void> {
+  if (!isPanelKey(key)) throw new Error("Ruta de archivo inválida.");
+  await deleteR2Object(key);
 }

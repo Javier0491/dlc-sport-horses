@@ -25,7 +25,7 @@ function MediaCard({ item }: { item: MediaItem }) {
 
   const remove = async () => {
     setDeleting(true);
-    const result = await deleteMedia(item.path).catch(() => null);
+    const result = await deleteMedia(item.path, item.store).catch(() => null);
     if (result?.ok) {
       router.refresh();
     } else {
@@ -65,7 +65,7 @@ function MediaCard({ item }: { item: MediaItem }) {
       </a>
       <div className="space-y-2 p-3">
         <p className="truncate text-xs text-neutral-500" title={item.path}>
-          {item.path} · {formatSize(item.size)}
+          {item.store === "r2" ? "R2" : "Supabase"} · {item.path} · {formatSize(item.size)}
         </p>
         <div className="flex gap-2">
           <input
@@ -132,7 +132,7 @@ export default function MediaGallery({ items }: { items: MediaItem[] }) {
   return (
     <ul className="mt-4 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
       {items.map((item) => (
-        <MediaCard key={item.path} item={item} />
+        <MediaCard key={`${item.store}:${item.path}`} item={item} />
       ))}
     </ul>
   );

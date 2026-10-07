@@ -10,7 +10,13 @@ import {
   newSessionToken,
   requireAdmin,
 } from "@/lib/admin-auth";
-import { createVideoUpload, deleteImage, uploadImage, type MediaItem } from "@/lib/storage";
+import {
+  createVideoUpload,
+  deleteImage,
+  deleteR2Media,
+  uploadImage,
+  type MediaItem,
+} from "@/lib/storage";
 import {
   deleteCaballoRow,
   insertCaballo,
@@ -48,7 +54,8 @@ export async function login(
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
-    path: "/admin",
+    // "/" y no "/admin": la ruta /api/upload/r2 también necesita la sesión.
+    path: "/",
     maxAge: ADMIN_SESSION_SECONDS,
   });
   revalidatePath("/admin", "layout");
@@ -56,7 +63,9 @@ export async function login(
 }
 
 export async function logout() {
-  (await cookies()).delete({ name: ADMIN_COOKIE, path: "/admin" });
+  const jar = await cookies();
+  jar.delete({ name: ADMIN_COOKIE, path: "/" });
+  jar.delete({ name: ADMIN_COOKIE, path: "/admin" }); // sesiones de antes del cambio de ruta
   revalidatePath("/admin", "layout");
 }
 
@@ -95,10 +104,14 @@ export async function prepareVideoUpload(
   }
 }
 
-export async function deleteMedia(path: string): Promise<Result<null>> {
+export async function deleteMedia(
+  path: string,
+  store: MediaItem["store"] = "supabase",
+): Promise<Result<null>> {
   try {
     await requireAdmin();
-    await deleteImage(path);
+    if (store === "r2") await deleteR2Media(String(path));
+    else await deleteImage(path);
     revalidatePath("/admin/media");
     return { ok: true, data: null };
   } catch (err) {

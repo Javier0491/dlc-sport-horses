@@ -1,12 +1,14 @@
 import MediaDropzone from "@/components/admin/MediaDropzone";
 import MediaGallery from "@/components/admin/MediaGallery";
-import { listMedia, type MediaItem } from "@/lib/storage";
+import { listMedia, listR2Media, type MediaItem } from "@/lib/storage";
 
 export default async function MediaAdmin() {
   let items: MediaItem[] = [];
   let loadError: string | null = null;
   try {
-    items = await listMedia();
+    // R2 (lo nuevo) y Supabase (lo anterior), lo más reciente primero.
+    const [r2, supabase] = await Promise.all([listR2Media(), listMedia()]);
+    items = [...r2, ...supabase].sort((a, b) => (b.createdAt ?? "").localeCompare(a.createdAt ?? ""));
   } catch (err) {
     loadError = err instanceof Error ? err.message : "Error al cargar el bucket.";
   }

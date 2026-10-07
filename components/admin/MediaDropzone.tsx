@@ -2,7 +2,6 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { MAX_VIDEO_MB } from "@/lib/media-limits";
 import {
   IMAGE_ACCEPT,
   isImageFile,
@@ -10,6 +9,7 @@ import {
   uploadImageFile,
   uploadVideoFile,
   VIDEO_ACCEPT,
+  videoLimitLabel,
 } from "./upload-media";
 
 type Upload = { name: string; status: "uploading" | "done" | "error"; error?: string };
@@ -99,7 +99,7 @@ export default function MediaDropzone() {
         <p className="mt-4 text-sm font-medium">
           {busy ? "Subiendo…" : "Arrastra fotos o videos aquí o haz clic para elegirlos"}
         </p>
-        <p className="mt-1 text-xs text-neutral-500">Fotos (se optimizan solas) · Videos MP4, MOV o WEBM hasta {MAX_VIDEO_MB} MB</p>
+        <p className="mt-1 text-xs text-neutral-500">Fotos (se optimizan solas) · Videos MP4, MOV o WEBM hasta {videoLimitLabel()}</p>
       </label>
 
       {uploads.length > 0 && (
