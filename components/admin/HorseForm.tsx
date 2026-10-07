@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { startTransition, useActionState, useState } from "react";
+import { startTransition, useActionState, useCallback, useState } from "react";
 import type { HorseFormState } from "@/app/(admin)/admin/actions";
 import {
   CATEGORIAS,
@@ -11,7 +11,7 @@ import {
 } from "@/lib/caballos-types";
 import { hintClass, inputClass, labelClass } from "./form-styles";
 import GalleryEditor from "./GalleryEditor";
-import ImagePreview from "./ImagePreview";
+import ImageUploadField from "./ImageUploadField";
 import VideoField from "./VideoField";
 
 type Props = {
@@ -54,8 +54,9 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 
 export default function HorseForm({ action, caballo, opciones }: Props) {
   const [state, formAction, pending] = useActionState(action, INITIAL);
-  const [imagen, setImagen] = useState(caballo?.imagen_url ?? "");
-  const [retrato, setRetrato] = useState(caballo?.retrato_url ?? "");
+  // Fotos subiéndose: no se guarda hasta que terminen, o se perderían.
+  const [uploading, setUploading] = useState(0);
+  const trackUpload = useCallback((busy: boolean) => setUploading((n) => n + (busy ? 1 : -1)), []);
   const [preventa, setPreventa] = useState(caballo?.preventa_activa ?? false);
 
   // Enviar sin pasar `action` al <form>: así React no vacía los campos si hay un error.
@@ -210,34 +211,19 @@ export default function HorseForm({ action, caballo, opciones }: Props) {
       </Section>
 
       <Section title="Fotos y video">
-        <p className="text-sm text-neutral-600 sm:col-span-2">
-          Sube la foto en{" "}
-          <Link href="/admin/media" target="_blank" className="font-medium text-dlc-cuero underline">
-            Medios
-          </Link>
-          , pulsa «Copiar URL» y pégala aquí.
-        </p>
-        <Field label="Foto principal (imagen_url)">
-          <input
-            name="imagen_url"
-            value={imagen}
-            onChange={(e) => setImagen(e.target.value)}
-            placeholder="https://…supabase.co/storage/v1/object/public/media/…"
-            className={inputClass}
-          />
-          <ImagePreview url={imagen} alt="Foto principal" />
-        </Field>
-        <Field label="Retrato (opcional)">
-          <input
-            name="retrato_url"
-            value={retrato}
-            onChange={(e) => setRetrato(e.target.value)}
-            placeholder="https://…supabase.co/storage/v1/object/public/media/…"
-            className={inputClass}
-          />
-          <ImagePreview url={retrato} alt="Retrato" />
-        </Field>
-        <GalleryEditor initial={caballo?.galeria ?? []} />
+        <ImageUploadField
+          name="imagen_url"
+          label="Foto principal"
+          initial={caballo?.imagen_url ?? ""}
+          onBusyChange={trackUpload}
+        />
+        <ImageUploadField
+          name="retrato_url"
+          label="Retrato (opcional)"
+          initial={caballo?.retrato_url ?? ""}
+          onBusyChange={trackUpload}
+        />
+        <GalleryEditor initial={caballo?.galeria ?? []} onBusyChange={trackUpload} />
         <VideoField
           name="video_url"
           label="Video del caballo"
@@ -337,10 +323,14 @@ export default function HorseForm({ action, caballo, opciones }: Props) {
           </Link>
           <button
             type="submit"
-            disabled={pending}
+            disabled={pending || uploading > 0}
             className="rounded-md bg-dlc-negro px-6 py-2.5 text-sm font-medium text-dlc-marfil transition-colors hover:bg-dlc-cuero disabled:opacity-60"
           >
-            {pending ? "Guardando…" : caballo ? "Guardar cambios" : "Crear caballo"}
+            {pending
+              ? "Guardando…"
+              : uploading > 0
+                ? "Subiendo fotos…"
+                : caballo ? "Guardar cambios" : "Crear caballo"}
           </button>
         </div>
       </div>

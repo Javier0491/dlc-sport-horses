@@ -1,35 +1,50 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
 import { useState } from "react";
 import { MAX_GALERIA } from "@/lib/caballos-types";
-import { isAllowedImageUrl } from "@/lib/image-url";
-import { hintClass, inputClass } from "./form-styles";
+import { hintClass } from "./form-styles";
+import { IMAGE_ACCEPT, uploadImageFile } from "./upload-image";
+
+type Props = { initial: string[]; onBusyChange?: (busy: boolean) => void };
 
 // Galería ordenada de un caballo. Se envía con el formulario como JSON en un
 // campo oculto "galeria"; el orden aquí es el orden en la ficha pública.
-export default function GalleryEditor({ initial }: { initial: string[] }) {
+export default function GalleryEditor({ initial, onBusyChange }: Props) {
   const [urls, setUrls] = useState(initial);
-  const [draft, setDraft] = useState("");
+  const [dragging, setDragging] = useState(false);
+  const [pending, setPending] = useState(0);
   const [error, setError] = useState<string | null>(null);
 
-  // Acepta uno o varios enlaces a la vez (separados por espacios o saltos de línea).
-  const add = () => {
-    const candidates = draft.split(/\s+/).map((u) => u.trim()).filter(Boolean);
-    if (!candidates.length) return;
-    const invalid = candidates.filter((u) => !isAllowedImageUrl(u));
-    const fresh = candidates.filter((u) => isAllowedImageUrl(u) && !urls.includes(u));
-    const room = MAX_GALERIA - urls.length;
-    setUrls([...urls, ...fresh.slice(0, room)]);
-    setDraft("");
-    setError(
-      invalid.length
-        ? `${invalid.length === 1 ? "Un enlace no es" : `${invalid.length} enlaces no son`} de Medios y no se añadió.`
-        : fresh.length > room
-          ? `La galería admite hasta ${MAX_GALERIA} fotos.`
-          : null,
+  // Optimiza y sube las fotos una detrás de otra, añadiéndolas al final.
+  const addFiles = async (fileList: FileList | null) => {
+    const files = Array.from(fileList ?? []).filter(
+      (f) => f.type.startsWith("image/") || /\.(heic|heif)$/i.test(f.name),
     );
+    if (!files.length) return;
+    const room = MAX_GALERIA - urls.length - pending;
+    const batch = files.slice(0, Math.max(0, room));
+    const errors: string[] = [];
+    if (files.length > batch.length) errors.push(`La galería admite hasta ${MAX_GALERIA} fotos.`);
+    if (!batch.length) {
+      setError(errors[0]);
+      return;
+    }
+
+    setError(null);
+    setPending((n) => n + batch.length);
+    onBusyChange?.(true);
+    for (const file of batch) {
+      try {
+        const url = await uploadImageFile(file);
+        setUrls((list) => (list.includes(url) ? list : [...list, url]));
+      } catch (err) {
+        errors.push(`${file.name}: ${err instanceof Error ? err.message : "no se pudo subir."}`);
+      }
+      setPending((n) => n - 1);
+    }
+    onBusyChange?.(false);
+    setError(errors.length ? errors.join(" ") : null);
   };
 
   const move = (from: number, to: number) => {
@@ -49,36 +64,59 @@ export default function GalleryEditor({ initial }: { initial: string[] }) {
         </span>
       </div>
       <p className={hintClass}>
-        Se muestran en la ficha junto a la foto principal y el retrato. Sube las fotos en{" "}
-        <Link href="/admin/media" target="_blank" className="font-medium text-dlc-cuero underline">
-          Medios
-        </Link>
-        , copia sus URL y pégalas aquí (puedes pegar varias a la vez).
+        Se muestran en la ficha junto a la foto principal y el retrato. Arrastra varias fotos a
+        la vez; se optimizan y se suben solas.
       </p>
 
-      <div className="mt-3 flex gap-2">
-        <textarea
-          value={draft}
-          onChange={(e) => setDraft(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && !e.shiftKey) {
-              e.preventDefault();
-              add();
-            }
+      <label
+        onDragOver={(event) => {
+          event.preventDefault();
+          setDragging(true);
+        }}
+        onDragLeave={() => setDragging(false)}
+        onDrop={(event) => {
+          event.preventDefault();
+          setDragging(false);
+          addFiles(event.dataTransfer.files);
+        }}
+        className={`mt-3 flex cursor-pointer flex-col items-center justify-center gap-2 rounded-md border-2 border-dashed bg-white px-6 py-8 text-center text-xs transition-colors ${
+          dragging ? "border-dlc-cuero bg-dlc-marfil" : "border-dlc-arena hover:border-dlc-cuero"
+        } ${urls.length >= MAX_GALERIA ? "pointer-events-none opacity-40" : ""}`}
+      >
+        <input
+          type="file"
+          accept={IMAGE_ACCEPT}
+          multiple
+          className="sr-only"
+          disabled={urls.length >= MAX_GALERIA}
+          onChange={(event) => {
+            addFiles(event.target.files);
+            event.target.value = "";
           }}
-          rows={1}
-          placeholder="Pega aquí una o varias URL de Medios"
-          className={`${inputClass} mt-0 resize-y`}
         />
-        <button
-          type="button"
-          onClick={add}
-          disabled={!draft.trim() || urls.length >= MAX_GALERIA}
-          className="shrink-0 rounded-md border border-dlc-cuero px-4 text-sm font-medium text-dlc-cuero hover:bg-dlc-cuero hover:text-dlc-marfil disabled:opacity-40"
-        >
-          Añadir
-        </button>
-      </div>
+        {pending > 0 ? (
+          <span className="h-6 w-6 animate-spin rounded-full border-2 border-neutral-300 border-t-dlc-cuero" />
+        ) : (
+          <svg
+            viewBox="0 0 24 24"
+            className="h-6 w-6 text-neutral-400"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={1.5}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M12 16V4M7 9l5-5 5 5" />
+            <path d="M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3" />
+          </svg>
+        )}
+        <span className="font-medium text-neutral-600">
+          {pending > 0
+            ? `Subiendo ${pending} foto${pending === 1 ? "" : "s"}…`
+            : "Arrastra fotos aquí o haz clic para elegirlas"}
+        </span>
+      </label>
       {error && (
         <p role="alert" className="mt-2 text-xs text-red-600">
           {error}
