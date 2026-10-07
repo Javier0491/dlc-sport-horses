@@ -67,10 +67,27 @@ export const FILTER_PARAMS = ["raza", "precio", "comportamiento"] as const;
 export type FilterParam = (typeof FILTER_PARAMS)[number];
 export type Filters = Partial<Record<FilterParam, string>>;
 
-// /potros?sexo=yegua&linea=diamant-de-semilly&saltando=si
-export const FOAL_FILTER_PARAMS = ["sexo", "linea", "saltando", "precio"] as const;
+// /potros?sexo=yegua&linea=diamant-de-semilly&saltando=si&edad=5-8
+export const FOAL_FILTER_PARAMS = ["sexo", "linea", "saltando", "precio", "edad"] as const;
 export type FoalFilterParam = (typeof FOAL_FILTER_PARAMS)[number];
 export type FoalFilters = Partial<Record<FoalFilterParam, string>>;
+
+// Rangos de edad del catálogo de potros (edad = año actual − año de nacimiento).
+// Los 5 años cuentan en «5-8 años»; «0-5 años» son los menores de 5.
+export const AGE_RANGES = [
+  { value: "0-5", label: "0-5 años", min: 0, max: 4 },
+  { value: "5-8", label: "5-8 años", min: 5, max: 8 },
+  { value: "9-mas", label: "9 años en adelante", min: 9, max: Infinity },
+] as const;
+
+export const ageOf = (h: Pick<Horse, "birthYear">, year = new Date().getFullYear()) =>
+  h.birthYear === null ? null : year - h.birthYear;
+
+export function inAgeRange(h: Pick<Horse, "birthYear">, range: string) {
+  const age = ageOf(h);
+  const r = AGE_RANGES.find((r) => r.value === range);
+  return age !== null && !!r && age >= r.min && age <= r.max;
+}
 
 // ---------------------------------------------------------------------
 // Pedigrí: líneas de sangre y parentescos dentro de una lista de caballos

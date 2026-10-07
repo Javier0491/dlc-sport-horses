@@ -4,7 +4,9 @@ import Image from "next/image";
 import Link from "next/link";
 import { Fragment, useState } from "react";
 import {
+  AGE_RANGES,
   hasAncestor,
+  inAgeRange,
   heightLabel,
   slugify,
   type Bloodline,
@@ -27,9 +29,9 @@ import {
 // Cuántas líneas de sangre se muestran antes de "Ver todas".
 const VISIBLE_LINES = 8;
 
-type FilterState = { sexo: string; linea: string; saltando: string; precio: string };
+type FilterState = { sexo: string; edad: string; linea: string; saltando: string; precio: string };
 
-const EMPTY_FILTERS: FilterState = { sexo: ALL, linea: ALL, saltando: ALL, precio: ALL };
+const EMPTY_FILTERS: FilterState = { sexo: ALL, edad: ALL, linea: ALL, saltando: ALL, precio: ALL };
 
 function FoalCard({ foal }: { foal: Horse }) {
   // La alzada va en minúsculas ("1.68 m") dentro de la línea en mayúsculas.
@@ -156,6 +158,7 @@ export default function FoalCatalog({
   const options = {
     sexo: optionsFrom(["Entero", "Castrado", "Yegua"].filter((s) => foals.some((f) => f.sex === s))),
     linea: lines.map((l) => ({ value: l.slug, label: `${l.name} (${l.count})` })),
+    edad: AGE_RANGES.map(({ value, label }) => ({ value, label })),
     saltando: [{ value: "si", label: "Actualmente saltando" }],
     precio: priceOptions(foals.flatMap((f) => (f.priceLevel ? [f.priceLevel] : []))),
   };
@@ -163,6 +166,7 @@ export default function FoalCatalog({
   const [showAllLines, setShowAllLines] = useState(false);
   const [filters, setFilters] = useState<FilterState>({
     sexo: validOr(initialFilters.sexo, options.sexo),
+    edad: validOr(initialFilters.edad, options.edad),
     linea: validOr(initialFilters.linea, options.linea),
     saltando: validOr(initialFilters.saltando, options.saltando),
     precio: validOr(initialFilters.precio, options.precio),
@@ -178,6 +182,7 @@ export default function FoalCatalog({
   const filtered = foals.filter(
     (f) =>
       (filters.sexo === ALL || filters.sexo === slugify(f.sex ?? "")) &&
+      (filters.edad === ALL || inAgeRange(f, filters.edad)) &&
       (filters.linea === ALL || hasAncestor(f, filters.linea)) &&
       (filters.saltando === ALL || f.jumping) &&
       (filters.precio === ALL || filters.precio === String(f.priceLevel)),
@@ -203,6 +208,13 @@ export default function FoalCatalog({
             options={options.sexo}
             value={filters.sexo}
             onChange={(sexo) => updateFilters({ ...filters, sexo })}
+          />
+          <SingleFilter
+            label="Edad"
+            allLabel="Todas"
+            options={options.edad}
+            value={filters.edad}
+            onChange={(edad) => updateFilters({ ...filters, edad })}
           />
           <SingleFilter
             label="Competencia"
