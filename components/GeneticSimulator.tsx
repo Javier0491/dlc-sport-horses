@@ -254,11 +254,20 @@ function PhotoDropzone({
         {photoUrl ? (
           <>
             {/* Vista previa local (blob:), no pasa por el optimizador de next/image */}
+            {/* Fondo: la misma foto desenfocada rellena el espacio sobrante */}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={photoUrl}
+              alt=""
+              aria-hidden="true"
+              className="absolute inset-0 h-full w-full scale-110 object-cover opacity-60 blur-xl"
+            />
+            {/* El caballo completo, sin recortes, sea cual sea la proporción de la foto */}
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={photoUrl}
               alt="Foto de tu semental"
-              className="absolute inset-0 h-full w-full object-cover"
+              className="absolute inset-0 h-full w-full object-contain"
             />
             <span className="absolute bottom-3 left-3 bg-dlc-marfil px-3 py-1.5 text-[10px] uppercase tracking-[0.3em] text-dlc-cuero">
               Cambiar foto
