@@ -54,6 +54,10 @@ export const priceLabel = (level: number) => `$${"*".repeat(level)}`;
 
 export const heightLabel = (meters: number) => `${meters.toFixed(2)} m`;
 
+// Nivel de salto del panel: "1.30" → "1.30 m"; textos como "Jóvenes caballos" se dejan igual.
+export const levelLabel = (level: string) =>
+  /^\d+([.,]\d+)?$/.test(level.trim()) ? `${level.trim()} m` : level.trim();
+
 // "el caballo Hit One DLC" / "la yegua Helena DLC" (mensajes de WhatsApp, textos).
 export const horseArticle = (h: Pick<Horse, "category" | "sex">) =>
   h.category === "Semental"

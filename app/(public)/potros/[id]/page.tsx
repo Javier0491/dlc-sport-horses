@@ -9,6 +9,7 @@ import {
   bloodlines,
   heightLabel,
   horseArticle,
+  levelLabel,
   relativesOf,
 } from "@/lib/catalog";
 import { getCaballoBySlug, getPotrosActivos } from "@/lib/data";
@@ -74,7 +75,12 @@ export default async function FichaPotro({
     { label: "Alzada", value: foal.height !== null ? heightLabel(foal.height) : null },
     { label: "Color", value: foal.color },
     { label: "Registro", value: foal.registry },
-    { label: "Estado", value: foal.jumping ? "Actualmente saltando" : "En formación" },
+    {
+      label: "Estado",
+      value: foal.jumping
+        ? `Actualmente saltando${foal.level ? ` · ${levelLabel(foal.level)}` : ""}`
+        : "En formación",
+    },
   ].filter((fact) => fact.value);
 
   return (
@@ -117,6 +123,7 @@ export default async function FichaPotro({
           {foal.jumping && (
             <span className="mt-6 w-fit bg-dlc-oro px-4 py-2 text-[10px] font-medium uppercase tracking-[0.3em] text-dlc-negro">
               Actualmente saltando
+              {foal.level && <span className="normal-case"> · {levelLabel(foal.level)}</span>}
             </span>
           )}
         </div>

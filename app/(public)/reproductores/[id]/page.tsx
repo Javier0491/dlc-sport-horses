@@ -5,7 +5,7 @@ import { notFound } from "next/navigation";
 import FloatingCta from "@/components/FloatingCta";
 import HorseMedia from "@/components/HorseMedia";
 import PedigreeTree from "@/components/PedigreeTree";
-import { DISCIPLINE, heightLabel, priceLabel } from "@/lib/catalog";
+import { DISCIPLINE, heightLabel, levelLabel, priceLabel } from "@/lib/catalog";
 import { whatsappUrl } from "@/lib/contact";
 import { getCaballoBySlug, getProgenie, getSementalesActivos } from "@/lib/data";
 
@@ -200,7 +200,7 @@ export default async function Semental({
                         )}
                       </span>
                       <span className="shrink-0 border border-dlc-oro/60 px-3 py-1.5 text-[10px] uppercase tracking-[0.25em] text-dlc-cuero">
-                        {child.level ?? "En competencia"}
+                        {child.level ? levelLabel(child.level) : "En competencia"}
                       </span>
                     </>
                   );
