@@ -8,6 +8,9 @@ import {
 import { hintClass, inputClass } from "./form-styles";
 import GalleryEditor from "./GalleryEditor";
 
+// Secciones que admiten videos además de fotos (se comprimen antes de subir).
+const SECCIONES_CON_VIDEO: string[] = ["primera_impresion", "potencial"];
+
 // Las cuatro secciones desplegables de la galería de la ficha («Conoce a…»).
 // Cada una envía `galeria_<clave>` (JSON de URLs) y `galeria_<clave>_texto`.
 export default function GallerySectionsEditor({
@@ -31,9 +34,9 @@ export default function GallerySectionsEditor({
           </li>
           <li>Espera a que terminen de subir: se optimizan y se guardan solas, sin entrar a Supabase.</li>
           <li>
-            En «Primera Impresión» también puedes subir <strong>videos</strong> (MP4, MOV o WEBM): se
-            comprimen solos antes de subir para que la página no se haga lenta. Deja la pestaña
-            abierta mientras tanto.
+            En «Primera Impresión» y «Potencial» también puedes subir <strong>videos</strong> (MP4,
+            MOV o WEBM): se comprimen solos antes de subir para que la página no se haga lenta.
+            Deja la pestaña abierta mientras tanto.
           </li>
           <li>Ordénalas con ← → (la primera aparece primero) y quita las que sobren con ✕.</li>
           <li>
@@ -45,7 +48,7 @@ export default function GallerySectionsEditor({
 
       {SECCIONES_GALERIA.map(({ key, label, sugerencia }, i) => {
         const section = initial?.[key];
-        const conVideo = key === "primera_impresion";
+        const conVideo = SECCIONES_CON_VIDEO.includes(key);
         const fotos = [...(section?.fotos ?? []), ...(key === "primera_impresion" ? legacy : [])];
         return (
           <div key={key} className="rounded-md border border-dlc-arena bg-white/60 p-4">
