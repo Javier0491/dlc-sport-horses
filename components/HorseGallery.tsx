@@ -116,18 +116,16 @@ function countLabel(items: string[]) {
 
 export default function HorseGallery({
   name,
-  main,
-  portrait,
+  portrait = null,
   sections,
 }: {
   name: string;
-  main: string | null;
-  portrait: string | null;
+  portrait?: string | null; // solo donde la página no lo muestra ya (fichas de sementales)
   sections: GallerySection[];
 }) {
   // Todas las fotos en orden para el visor (sin repetir).
   const images = [
-    ...new Set([main, portrait, ...sections.flatMap((s) => s.photos)].filter((u): u is string => !!u)),
+    ...new Set([portrait, ...sections.flatMap((s) => s.photos)].filter((u): u is string => !!u)),
   ];
 
   const dialog = useRef<HTMLDialogElement>(null);
@@ -156,36 +154,22 @@ export default function HorseGallery({
     return () => el.removeEventListener("keydown", onKey);
   }, [go]);
 
-
   if (images.length === 0) return null;
 
   return (
     <>
-      {(main || portrait) && (
-        <div className={`grid gap-3 ${main && portrait ? "md:grid-cols-[2fr_1fr]" : ""}`}>
-          {main && (
-            <Thumb
-              src={main}
-              alt={`${name}, foto principal`}
-              sizes="(min-width: 768px) 66vw, 100vw"
-              onOpen={() => openViewer(main)}
-              className="aspect-[3/2]"
-            />
-          )}
-          {portrait && (
-            <Thumb
-              src={portrait}
-              alt={`${name}, retrato`}
-              sizes="(min-width: 768px) 33vw, 100vw"
-              onOpen={() => openViewer(portrait)}
-              className={main ? "aspect-[3/4] md:aspect-auto md:h-full" : "aspect-[3/4] md:max-w-sm"}
-            />
-          )}
-        </div>
+      {portrait && (
+        <Thumb
+          src={portrait}
+          alt={`${name}, retrato`}
+          sizes="(min-width: 768px) 33vw, 100vw"
+          onOpen={() => openViewer(portrait)}
+          className="mx-auto aspect-[3/4] md:max-w-sm"
+        />
       )}
 
       {sections.length > 0 && (
-        <div className="mt-10">
+        <div className={portrait ? "mt-10" : ""}>
           <ExpandingStrips
             sizes="(min-width: 768px) 70vw, 100vw"
             strips={sections.map((section, i) => ({

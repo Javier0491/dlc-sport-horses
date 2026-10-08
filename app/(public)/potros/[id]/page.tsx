@@ -136,7 +136,8 @@ export default async function FichaPotro({
       </section>
 
       {/* Video y galería */}
-      <HorseMedia horse={foal} />
+      {/* El retrato ya aparece más abajo, junto a los datos del potro */}
+      <HorseMedia horse={foal} showPortrait={false} />
 
       <div className="mx-auto grid max-w-7xl gap-16 px-6 py-16 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:gap-20 lg:py-24">
         {/* Datos y retrato */}

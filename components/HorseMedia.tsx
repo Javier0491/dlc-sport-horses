@@ -3,15 +3,16 @@ import { parseVideo } from "@/lib/video";
 import HorseGallery from "./HorseGallery";
 import VideoPlayer from "./VideoPlayer";
 
-// Banda oscura de la ficha: video del caballo y galería («Conoce a…»): foto
-// principal + retrato y las secciones desplegables cargadas en el panel.
-// No se muestra si no hay video, ni retrato, ni secciones (la portada ya
-// enseña la foto principal).
-export default function HorseMedia({ horse }: { horse: Horse }) {
+// Banda oscura de la ficha: video del caballo y galería («Conoce a…») con las
+// secciones cargadas en el panel. La foto principal no se repite aquí (ya es la
+// portada); el retrato solo si la página no lo muestra en otro lugar.
+// No se muestra si no hay video, ni retrato, ni secciones.
+export default function HorseMedia({ horse, showPortrait = true }: { horse: Horse; showPortrait?: boolean }) {
   const video = parseVideo(horse.video);
   const sections = horse.gallery;
-  if (!video && !horse.portrait && sections.length === 0) return null;
-  const hasPhotos = Boolean(horse.image || horse.portrait || sections.length);
+  const portrait = showPortrait ? horse.portrait : null;
+  if (!video && !portrait && sections.length === 0) return null;
+  const hasPhotos = Boolean(portrait || sections.length);
 
   return (
     <section className="bg-dlc-negro px-6 py-20 sm:py-28">
@@ -34,12 +35,7 @@ export default function HorseMedia({ horse }: { horse: Horse }) {
 
         {hasPhotos && (
           <div className={video ? "mt-6" : "mt-14"}>
-            <HorseGallery
-              name={horse.name}
-              main={horse.image}
-              portrait={horse.portrait}
-              sections={sections}
-            />
+            <HorseGallery name={horse.name} portrait={portrait} sections={sections} />
             <p className="mt-6 text-center text-[10px] uppercase tracking-[0.35em] text-dlc-marfil/40">
               {sections.length > 0 ? (
                 <>
