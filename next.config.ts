@@ -25,6 +25,12 @@ const nextConfig: NextConfig = {
         hostname: "pub-*.r2.dev",
       },
       {
+        // Miniaturas de los videos de YouTube en las galerías.
+        protocol: "https",
+        hostname: "i.ytimg.com",
+        pathname: "/vi/**",
+      },
+      {
         protocol: "https",
         hostname: supabaseHost,
         pathname: "/storage/v1/object/public/**",

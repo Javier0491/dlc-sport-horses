@@ -75,5 +75,20 @@ export function isVideoUrl(value: string) {
   }
 }
 
+// Elemento de una galería: foto, archivo de video o enlace de YouTube.
+export type MediaKind = "image" | "video" | "youtube";
+
+export function mediaKind(value: string): MediaKind {
+  if (parseVideo(value)?.kind === "youtube") return "youtube";
+  return isVideoUrl(value) ? "video" : "image";
+}
+
+// Miniatura de un video de YouTube (null para transmisiones de canal, que no tienen).
+export function youtubeThumb(value: string): string | null {
+  const video = parseVideo(value);
+  const id = video?.kind === "youtube" ? /\/embed\/([\w-]{11})$/.exec(video.embed)?.[1] : null;
+  return id ? `https://i.ytimg.com/vi/${id}/hqdefault.jpg` : null;
+}
+
 export const VIDEO_HINT =
   "Arrastra un video (MP4, MOV o WEBM) o pega un enlace de YouTube o Vimeo.";

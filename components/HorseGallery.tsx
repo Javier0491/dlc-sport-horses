@@ -3,16 +3,19 @@
 import Image from "next/image";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { GallerySection } from "@/lib/catalog";
-import { isVideoUrl } from "@/lib/video";
+import { embedUrl, mediaKind, parseVideo } from "@/lib/video";
 import ExpandingStrips from "./ExpandingStrips";
+import MediaPreview, { PlayBadge } from "./MediaPreview";
 
 // Galería de la ficha: foto principal (3:2, el caballo completo) y retrato, y
 // debajo las secciones («Primera Impresión», «Presencia»…) como franjas que se
 // abren al pasar el cursor (o al tocarlas): su portada es la primera foto y,
 // abiertas, muestran el texto y las miniaturas. Cualquier foto abre el visor a
 // pantalla completa (flechas, teclado ← → Esc, deslizar en móvil). Las
-// secciones pueden tener videos: se muestra su primer fotograma y se
-// reproducen en el visor.
+// secciones pueden tener videos y enlaces de YouTube: se ve su primer
+// fotograma o miniatura y se reproducen en el visor (YouTube, al darle play).
+
+const isMovie = (src: string) => mediaKind(src) !== "image";
 
 const MAX_MINIS = 6; // miniaturas por sección; el resto se ve en el visor
 
@@ -36,41 +39,20 @@ function Thumb({
       aria-label={`Ampliar: ${alt}`}
       className={`group relative block w-full overflow-hidden bg-dlc-negro ${className}`}
     >
-      {isVideoUrl(src) ? (
-        <video
-          src={`${src}#t=0.1`}
-          muted
-          playsInline
-          preload="metadata"
-          aria-hidden="true"
-          className="absolute inset-0 h-full w-full object-cover transition-transform duration-[1200ms] ease-out group-hover:scale-105"
-        />
-      ) : (
-        <Image
-          src={src}
-          alt={alt}
-          fill
-          sizes={sizes}
-          className="object-cover transition-transform duration-[1200ms] ease-out group-hover:scale-105"
-        />
-      )}
+      <Image
+        src={src}
+        alt={alt}
+        fill
+        sizes={sizes}
+        className="object-cover transition-transform duration-[1200ms] ease-out group-hover:scale-105"
+      />
       <span className="absolute inset-0 bg-dlc-negro/0 transition-colors duration-500 group-hover:bg-dlc-negro/25" />
-      <span
-        className={`absolute inset-0 flex items-center justify-center transition-opacity duration-500 group-hover:opacity-100 ${
-          isVideoUrl(src) ? "opacity-100" : "opacity-0"
-        }`}
-      >
+      <span className="absolute inset-0 flex items-center justify-center opacity-0 transition-opacity duration-500 group-hover:opacity-100">
         <span className="flex h-12 w-12 items-center justify-center rounded-full border border-dlc-oro/80 text-dlc-oro backdrop-blur-sm">
-          {isVideoUrl(src) ? (
-            <svg viewBox="0 0 24 24" className="ml-0.5 h-5 w-5" fill="currentColor" aria-hidden="true">
-              <path d="M8 5.5v13l10.5-6.5z" />
-            </svg>
-          ) : (
-            <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={1.5} aria-hidden="true">
-              <circle cx="11" cy="11" r="6" />
-              <path d="m20 20-4.5-4.5M11 8v6M8 11h6" />
-            </svg>
-          )}
+          <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={1.5} aria-hidden="true">
+            <circle cx="11" cy="11" r="6" />
+            <path d="m20 20-4.5-4.5M11 8v6M8 11h6" />
+          </svg>
         </span>
       </span>
     </button>
@@ -86,17 +68,11 @@ function Mini({ src, label, onOpen }: { src: string; label: string; onOpen: () =
       aria-label={label}
       className="relative block h-12 w-16 overflow-hidden ring-1 ring-dlc-marfil/20 transition-all hover:ring-2 hover:ring-dlc-oro sm:h-14 sm:w-20"
     >
-      {isVideoUrl(src) ? (
-        <>
-          <video src={`${src}#t=0.1`} muted playsInline preload="metadata" className="h-full w-full object-cover" />
-          <span className="absolute inset-0 flex items-center justify-center bg-dlc-negro/30 text-dlc-marfil">
-            <svg viewBox="0 0 24 24" className="h-4 w-4" fill="currentColor" aria-hidden="true">
-              <path d="M8 5.5v13l10.5-6.5z" />
-            </svg>
-          </span>
-        </>
-      ) : (
-        <Image src={src} alt="" fill sizes="80px" className="object-cover" />
+      <MediaPreview src={src} sizes="80px" />
+      {isMovie(src) && (
+        <span className="absolute inset-0 flex items-center justify-center bg-dlc-negro/30 text-dlc-marfil">
+          <PlayBadge />
+        </span>
       )}
     </button>
   );
@@ -104,7 +80,7 @@ function Mini({ src, label, onOpen }: { src: string; label: string; onOpen: () =
 
 // "4 fotos", "3 fotos · 1 video".
 function countLabel(items: string[]) {
-  const videos = items.filter(isVideoUrl).length;
+  const videos = items.filter(isMovie).length;
   const photos = items.length - videos;
   return [
     photos && `${photos} ${photos === 1 ? "foto" : "fotos"}`,
@@ -155,6 +131,7 @@ export default function HorseGallery({
   }, [go]);
 
   if (images.length === 0) return null;
+  const current = parseVideo(images[index]); // enlace de YouTube en el visor
 
   return (
     <>
@@ -198,7 +175,7 @@ export default function HorseGallery({
                           <li key={src}>
                             <Mini
                               src={src}
-                              label={`${isVideoUrl(src) ? "Ver video" : "Ampliar foto"} ${n + 1} de ${section.label}`}
+                              label={`${isMovie(src) ? "Ver video" : "Ampliar foto"} ${n + 1} de ${section.label}`}
                               onOpen={() => openViewer(src)}
                             />
                           </li>
@@ -263,7 +240,17 @@ export default function HorseGallery({
           </div>
 
           <div className="relative min-h-0 flex-1">
-            {isVideoUrl(images[index]) ? (
+            {current?.kind === "youtube" ? (
+              // Se carga sin reproducirse: el video empieza cuando le dan play.
+              <iframe
+                key={images[index]}
+                src={embedUrl(current, false)}
+                title={`${name}, video ${index + 1}`}
+                allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
+                allowFullScreen
+                className="absolute inset-0 m-auto aspect-video max-h-full w-full max-w-6xl animate-[fadeIn_.4s_ease-out] px-3 sm:px-20"
+              />
+            ) : mediaKind(images[index]) === "video" ? (
               <video
                 key={images[index]}
                 src={images[index]}
@@ -312,17 +299,13 @@ export default function HorseGallery({
                   <button
                     type="button"
                     onClick={() => setIndex(i)}
-                    aria-label={`Ver ${isVideoUrl(src) ? "video" : "foto"} ${i + 1}`}
+                    aria-label={`Ver ${isMovie(src) ? "video" : "foto"} ${i + 1}`}
                     aria-current={i === index}
                     className={`relative block h-14 w-20 overflow-hidden transition-opacity ${
                       i === index ? "ring-2 ring-dlc-oro" : "opacity-50 hover:opacity-100"
                     }`}
                   >
-                    {isVideoUrl(src) ? (
-                      <video src={`${src}#t=0.1`} muted playsInline preload="metadata" className="h-full w-full object-cover" />
-                    ) : (
-                      <Image src={src} alt="" fill sizes="80px" className="object-cover" />
-                    )}
+                    <MediaPreview src={src} sizes="80px" />
                   </button>
                 </li>
               ))}

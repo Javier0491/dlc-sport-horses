@@ -43,7 +43,8 @@ export default function GallerySectionsEditor({
           <li>
             En todas las secciones también puedes subir <strong>videos</strong> (MP4, MOV o WEBM):
             se comprimen solos antes de subir para que la página no se haga lenta. Deja la pestaña
-            abierta mientras tanto.
+            abierta mientras tanto. También puedes pegar un <strong>enlace de YouTube</strong> debajo
+            del recuadro y pulsar Añadir: en la web se ve su miniatura y se reproduce al darle play.
           </li>
           <li>Ordénalas con ← → (la primera aparece primero) y quita las que sobren con ✕.</li>
           <li>

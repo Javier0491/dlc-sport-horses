@@ -1,6 +1,5 @@
-import Image from "next/image";
 import type { ReactNode } from "react";
-import { isVideoUrl } from "@/lib/video";
+import MediaPreview from "./MediaPreview";
 
 // Franjas expansivas (acordeón de fotos): franjas oscuras con el número y el
 // título en vertical; la que tiene el cursor se abre y muestra su contenido.
@@ -11,7 +10,7 @@ import { isVideoUrl } from "@/lib/video";
 export type Strip = {
   key: string;
   label: string;
-  image: string | null; // foto o video de fondo (de un video se muestra el primer fotograma)
+  image: string | null; // foto, video o enlace de YouTube de fondo (de un video, su primer fotograma)
   content: ReactNode; // lo que aparece al abrirse, abajo a la izquierda
 };
 
@@ -29,25 +28,13 @@ export default function ExpandingStrips({ strips, sizes }: { strips: Strip[]; si
           // Abierta: con el cursor, al tocarla (foco) o con el teclado dentro (foco visible).
           className="group relative min-h-0 min-w-0 flex-1 overflow-hidden bg-dlc-negro transition-all duration-700 ease-in-out outline-none hover:flex-[5] focus:flex-[5] focus-visible:ring-2 focus-visible:ring-dlc-oro has-[:focus-visible]:flex-[5]"
         >
-          {strip.image &&
-            (isVideoUrl(strip.image) ? (
-              <video
-                src={`${strip.image}#t=0.1`}
-                muted
-                playsInline
-                preload="metadata"
-                aria-hidden="true"
-                className="absolute inset-0 h-full w-full object-cover object-center transition-transform duration-[1200ms] ease-out group-hover:scale-105 group-focus:scale-105"
-              />
-            ) : (
-              <Image
-                src={strip.image}
-                alt=""
-                fill
-                sizes={sizes}
-                className="object-cover object-center transition-transform duration-[1200ms] ease-out group-hover:scale-105 group-focus:scale-105"
-              />
-            ))}
+          {strip.image && (
+            <MediaPreview
+              src={strip.image}
+              sizes={sizes}
+              className="object-cover object-center transition-transform duration-[1200ms] ease-out group-hover:scale-105 group-focus:scale-105"
+            />
+          )}
           {/* Overlay: oscuro en reposo, se aclara al abrirse */}
           <div className="absolute inset-0 bg-black/60 transition-colors duration-700 group-hover:bg-black/30 group-focus:bg-black/30 group-has-[:focus-visible]:bg-black/30" />
           <div className="absolute inset-0 bg-gradient-to-t from-dlc-negro/95 via-dlc-negro/20 to-transparent opacity-0 transition-opacity duration-700 group-hover:opacity-100 group-focus:opacity-100 group-has-[:focus-visible]:opacity-100" />

@@ -13,7 +13,7 @@ import {
 import { isAllowedImageUrl } from "./image-url";
 import { slugify } from "./slug";
 import { supabaseAdmin } from "./supabase-admin";
-import { parseVideo, VIDEO_HINT } from "./video";
+import { parseVideo, VIDEO_HINT, youtubeThumb } from "./video";
 
 export * from "./caballos-types";
 
@@ -133,7 +133,8 @@ function photoList(form: FormData, key: string, label: string): string[] {
   if (!Array.isArray(urls) || urls.some((u) => typeof u !== "string")) throw unreadable;
   const unique = [...new Set(urls.map((u: string) => u.trim()).filter(Boolean))];
   if (unique.length > MAX_GALERIA) throw new Error(`${label}: admite hasta ${MAX_GALERIA} fotos.`);
-  if (unique.some((u) => !isAllowedImageUrl(u))) {
+  // Fotos y videos subidos a Medios, o enlaces de videos de YouTube.
+  if (unique.some((u) => !isAllowedImageUrl(u) && !youtubeThumb(u))) {
     throw new Error(`${label}: hay una foto que no es de Medios. Quítala y vuelve a subirla.`);
   }
   return unique;

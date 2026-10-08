@@ -1,11 +1,11 @@
 "use client";
 
-import Image from "next/image";
 import { useState } from "react";
 import { MAX_GALERIA } from "@/lib/caballos-types";
-import { isVideoUrl } from "@/lib/video";
+import { mediaKind, youtubeThumb } from "@/lib/video";
+import MediaPreview from "../MediaPreview";
 import DropArea, { UploadIcon } from "./DropArea";
-import { hintClass } from "./form-styles";
+import { hintClass, inputClass } from "./form-styles";
 import {
   IMAGE_ACCEPT,
   VIDEO_ACCEPT,
@@ -21,7 +21,7 @@ type Props = {
   hint?: string;
   dropLabel?: string;
   initial: string[];
-  allowVideo?: boolean; // admite videos además de fotos (se comprimen antes de subir)
+  allowVideo?: boolean; // admite videos (se comprimen antes de subir) y enlaces de YouTube
   onBusyChange?: (busy: boolean) => void;
 };
 
@@ -43,6 +43,7 @@ export default function GalleryEditor({
   const [pending, setPending] = useState(0);
   const [videoStatus, setVideoStatus] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [link, setLink] = useState("");
   const item = allowVideo ? "archivo" : "foto";
 
   // Comprime el video en el navegador (1080p, MP4) y luego lo sube.
@@ -82,6 +83,23 @@ export default function GalleryEditor({
     }
     onBusyChange?.(false);
     setError(errors.length ? errors.join(" ") : null);
+  };
+
+  // Enlace de un video de YouTube: se guarda tal cual y se reproduce en la ficha.
+  const addLink = () => {
+    const url = link.trim();
+    if (!url) return;
+    if (!youtubeThumb(url)) {
+      setError("Ese enlace no es de un video de YouTube (p. ej. https://youtu.be/…).");
+      return;
+    }
+    if (urls.length + pending >= MAX_GALERIA) {
+      setError(`«${label}» admite hasta ${MAX_GALERIA} ${item}s.`);
+      return;
+    }
+    setError(null);
+    setUrls((list) => (list.includes(url) ? list : [...list, url]));
+    setLink("");
   };
 
   const move = (from: number, to: number) => {
@@ -124,6 +142,33 @@ export default function GalleryEditor({
           </>
         )}
       </DropArea>
+      {allowVideo && (
+        <div className="mt-2 flex items-end gap-2">
+          <input
+            type="url"
+            value={link}
+            onChange={(e) => setLink(e.target.value)}
+            // Enter añade el enlace en vez de enviar todo el formulario.
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                addLink();
+              }
+            }}
+            placeholder="O pega un enlace de YouTube: https://youtu.be/…"
+            aria-label={`Enlace de YouTube para «${label}»`}
+            className={inputClass}
+          />
+          <button
+            type="button"
+            onClick={addLink}
+            disabled={!link.trim() || urls.length >= MAX_GALERIA}
+            className="shrink-0 rounded-md border border-dlc-arena bg-white px-4 py-2 text-sm hover:border-dlc-cuero disabled:opacity-50"
+          >
+            Añadir
+          </button>
+        </div>
+      )}
       {error && (
         <p role="alert" className="mt-2 text-xs text-red-600">
           {error}
@@ -135,15 +180,11 @@ export default function GalleryEditor({
           {urls.map((url, i) => (
             <li key={url} className="group relative overflow-hidden rounded-md border border-dlc-arena bg-white">
               <div className="relative aspect-[4/3]">
-                {isVideoUrl(url) ? (
-                  <>
-                    <video src={`${url}#t=0.1`} muted playsInline preload="metadata" className="h-full w-full object-cover" />
-                    <span className="absolute right-1.5 bottom-1.5 rounded bg-dlc-negro/70 px-1.5 text-[10px] text-dlc-marfil">
-                      ▶ Video
-                    </span>
-                  </>
-                ) : (
-                  <Image src={url} alt={`Foto ${i + 1}`} fill unoptimized className="object-cover" />
+                <MediaPreview src={url} sizes="200px" unoptimized />
+                {mediaKind(url) !== "image" && (
+                  <span className="absolute right-1.5 bottom-1.5 rounded bg-dlc-negro/70 px-1.5 text-[10px] text-dlc-marfil">
+                    {mediaKind(url) === "youtube" ? "▶ YouTube" : "▶ Video"}
+                  </span>
                 )}
               </div>
               <span className="absolute top-1.5 left-1.5 rounded bg-dlc-negro/70 px-1.5 text-[10px] text-dlc-marfil">
