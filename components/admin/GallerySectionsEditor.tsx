@@ -30,6 +30,11 @@ export default function GallerySectionsEditor({
             puedes hacer clic en el recuadro para elegirlas.
           </li>
           <li>Espera a que terminen de subir: se optimizan y se guardan solas, sin entrar a Supabase.</li>
+          <li>
+            En «Primera Impresión» también puedes subir <strong>videos</strong> (MP4, MOV o WEBM): se
+            comprimen solos antes de subir para que la página no se haga lenta. Deja la pestaña
+            abierta mientras tanto.
+          </li>
           <li>Ordénalas con ← → (la primera aparece primero) y quita las que sobren con ✕.</li>
           <li>
             Pulsa <strong>Guardar cambios</strong> al final del formulario. Las secciones vacías no
@@ -40,6 +45,7 @@ export default function GallerySectionsEditor({
 
       {SECCIONES_GALERIA.map(({ key, label, sugerencia }, i) => {
         const section = initial?.[key];
+        const conVideo = key === "primera_impresion";
         const fotos = [...(section?.fotos ?? []), ...(key === "primera_impresion" ? legacy : [])];
         return (
           <div key={key} className="rounded-md border border-dlc-arena bg-white/60 p-4">
@@ -63,9 +69,14 @@ export default function GallerySectionsEditor({
             <div className="mt-4">
               <GalleryEditor
                 name={`galeria_${key}`}
-                label={`Fotos de «${label}»`}
-                dropLabel={`Arrastra aquí las fotos de «${label}» o haz clic para elegirlas`}
+                label={conVideo ? `Fotos y videos de «${label}»` : `Fotos de «${label}»`}
+                dropLabel={
+                  conVideo
+                    ? `Arrastra aquí fotos o videos de «${label}» o haz clic para elegirlos`
+                    : `Arrastra aquí las fotos de «${label}» o haz clic para elegirlas`
+                }
                 initial={[...new Set(fotos)]}
+                allowVideo={conVideo}
                 onBusyChange={onBusyChange}
               />
             </div>

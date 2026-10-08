@@ -3,12 +3,15 @@
 import Image from "next/image";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { GallerySection } from "@/lib/catalog";
+import { isVideoUrl } from "@/lib/video";
 
 // Galería de la ficha: foto principal (3:2, el caballo completo) y retrato, y
 // debajo las secciones desplegables («Primera Impresión», «Presencia»…). Con
 // ratón, una sección se abre al pasar por encima y se cierra al pasar a otra;
 // en pantallas táctiles se abre y cierra tocándola. Cualquier foto abre el
 // visor a pantalla completa (flechas, teclado ← → Esc, deslizar en móvil).
+// Las secciones pueden tener videos: se muestra su primer fotograma y se
+// reproducen en el visor.
 
 const HOVER_DELAY_MS = 120; // evita abrir secciones al cruzarlas de pasada
 
@@ -32,24 +35,57 @@ function Thumb({
       aria-label={`Ampliar: ${alt}`}
       className={`group relative block w-full overflow-hidden bg-dlc-negro ${className}`}
     >
-      <Image
-        src={src}
-        alt={alt}
-        fill
-        sizes={sizes}
-        className="object-cover transition-transform duration-[1200ms] ease-out group-hover:scale-105"
-      />
+      {isVideoUrl(src) ? (
+        <video
+          src={`${src}#t=0.1`}
+          muted
+          playsInline
+          preload="metadata"
+          aria-hidden="true"
+          className="absolute inset-0 h-full w-full object-cover transition-transform duration-[1200ms] ease-out group-hover:scale-105"
+        />
+      ) : (
+        <Image
+          src={src}
+          alt={alt}
+          fill
+          sizes={sizes}
+          className="object-cover transition-transform duration-[1200ms] ease-out group-hover:scale-105"
+        />
+      )}
       <span className="absolute inset-0 bg-dlc-negro/0 transition-colors duration-500 group-hover:bg-dlc-negro/25" />
-      <span className="absolute inset-0 flex items-center justify-center opacity-0 transition-opacity duration-500 group-hover:opacity-100">
+      <span
+        className={`absolute inset-0 flex items-center justify-center transition-opacity duration-500 group-hover:opacity-100 ${
+          isVideoUrl(src) ? "opacity-100" : "opacity-0"
+        }`}
+      >
         <span className="flex h-12 w-12 items-center justify-center rounded-full border border-dlc-oro/80 text-dlc-oro backdrop-blur-sm">
-          <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={1.5} aria-hidden="true">
-            <circle cx="11" cy="11" r="6" />
-            <path d="m20 20-4.5-4.5M11 8v6M8 11h6" />
-          </svg>
+          {isVideoUrl(src) ? (
+            <svg viewBox="0 0 24 24" className="ml-0.5 h-5 w-5" fill="currentColor" aria-hidden="true">
+              <path d="M8 5.5v13l10.5-6.5z" />
+            </svg>
+          ) : (
+            <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={1.5} aria-hidden="true">
+              <circle cx="11" cy="11" r="6" />
+              <path d="m20 20-4.5-4.5M11 8v6M8 11h6" />
+            </svg>
+          )}
         </span>
       </span>
     </button>
   );
+}
+
+// "4 fotos", "3 fotos · 1 video".
+function countLabel(items: string[]) {
+  const videos = items.filter(isVideoUrl).length;
+  const photos = items.length - videos;
+  return [
+    photos && `${photos} ${photos === 1 ? "foto" : "fotos"}`,
+    videos && `${videos} ${videos === 1 ? "video" : "videos"}`,
+  ]
+    .filter(Boolean)
+    .join(" · ");
 }
 
 export default function HorseGallery({
@@ -176,7 +212,7 @@ export default function HorseGallery({
                   </span>
                   {section.photos.length > 0 && (
                     <span className="hidden text-[10px] uppercase tracking-[0.35em] text-dlc-marfil/40 sm:inline">
-                      {section.photos.length} {section.photos.length === 1 ? "foto" : "fotos"}
+                      {countLabel(section.photos)}
                     </span>
                   )}
                   <span
@@ -208,7 +244,7 @@ export default function HorseGallery({
                             <li key={src}>
                               <Thumb
                                 src={src}
-                                alt={`${name}, ${section.label}, foto ${n + 1}`}
+                                alt={`${name}, ${section.label}, ${isVideoUrl(src) ? "video" : "foto"} ${n + 1}`}
                                 sizes="(min-width: 768px) 25vw, 50vw"
                                 onOpen={() => openViewer(src)}
                                 className="aspect-[3/2]"
@@ -257,14 +293,26 @@ export default function HorseGallery({
           </div>
 
           <div className="relative min-h-0 flex-1">
-            <Image
-              key={images[index]}
-              src={images[index]}
-              alt={`${name}, foto ${index + 1}`}
-              fill
-              sizes="100vw"
-              className="animate-[fadeIn_.4s_ease-out] object-contain"
-            />
+            {isVideoUrl(images[index]) ? (
+              <video
+                key={images[index]}
+                src={images[index]}
+                controls
+                autoPlay
+                playsInline
+                aria-label={`${name}, video ${index + 1}`}
+                className="absolute inset-0 h-full w-full animate-[fadeIn_.4s_ease-out] object-contain"
+              />
+            ) : (
+              <Image
+                key={images[index]}
+                src={images[index]}
+                alt={`${name}, foto ${index + 1}`}
+                fill
+                sizes="100vw"
+                className="animate-[fadeIn_.4s_ease-out] object-contain"
+              />
+            )}
             {images.length > 1 && (
               <>
                 <button
@@ -294,13 +342,17 @@ export default function HorseGallery({
                   <button
                     type="button"
                     onClick={() => setIndex(i)}
-                    aria-label={`Ver foto ${i + 1}`}
+                    aria-label={`Ver ${isVideoUrl(src) ? "video" : "foto"} ${i + 1}`}
                     aria-current={i === index}
                     className={`relative block h-14 w-20 overflow-hidden transition-opacity ${
                       i === index ? "ring-2 ring-dlc-oro" : "opacity-50 hover:opacity-100"
                     }`}
                   >
-                    <Image src={src} alt="" fill sizes="80px" className="object-cover" />
+                    {isVideoUrl(src) ? (
+                      <video src={`${src}#t=0.1`} muted playsInline preload="metadata" className="h-full w-full object-cover" />
+                    ) : (
+                      <Image src={src} alt="" fill sizes="80px" className="object-cover" />
+                    )}
                   </button>
                 </li>
               ))}

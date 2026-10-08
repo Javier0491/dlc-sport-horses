@@ -66,5 +66,14 @@ export function embedUrl(video: Exclude<Video, { kind: "file" }>, autoplay = tru
   return url.toString();
 }
 
+// Archivo de video (no foto) en una lista de medios, p. ej. la galería del caballo.
+export function isVideoUrl(value: string) {
+  try {
+    return /\.(mp4|webm|mov)$/i.test(new URL(value, "https://x").pathname);
+  } catch {
+    return false;
+  }
+}
+
 export const VIDEO_HINT =
   "Arrastra un video (MP4, MOV o WEBM) o pega un enlace de YouTube o Vimeo.";
