@@ -1,42 +1,20 @@
-import Image from "next/image";
 import Link from "next/link";
 import type { GaleriaItem } from "@/lib/contenido-types";
+import ExpandingStrips from "./ExpandingStrips";
 
-// Galería expansiva (acordeón de fotos): franjas oscuras con el título en
-// vertical; la que tiene el cursor (o el foco del teclado) se abre y muestra
-// título, categoría, etiquetas y botón. En móvil las franjas van apiladas.
-// Las franjas se editan en /admin/contenido → Nuestro Legado.
-
+// Galería expansiva de El Rancho: cada franja se abre y muestra título,
+// categoría, etiquetas y botón. Las franjas se editan en /admin/contenido →
+// Nuestro Legado.
 export default function ExpandingGallery({ items }: { items: GaleriaItem[] }) {
   return (
-    <ul className="flex h-[720px] w-full flex-col gap-2 md:h-[600px] md:flex-row">
-      {items.map((item, i) => (
-        <li
-          key={item.id}
-          tabIndex={0}
-          className="group relative min-h-0 min-w-0 flex-1 overflow-hidden bg-dlc-negro transition-all duration-700 ease-in-out outline-none hover:flex-[5] focus-within:flex-[5] focus-visible:ring-2 focus-visible:ring-dlc-oro"
-        >
-          <Image
-            src={item.image_url}
-            alt={item.title}
-            fill
-            sizes="(min-width: 768px) 60vw, 100vw"
-            className="object-cover object-center transition-transform duration-[1200ms] ease-out group-hover:scale-105 group-focus-within:scale-105"
-          />
-          {/* Overlay: oscuro en reposo, se aclara al abrirse */}
-          <div className="absolute inset-0 bg-black/60 transition-colors duration-700 group-hover:bg-black/30 group-focus-within:bg-black/30" />
-          <div className="absolute inset-0 bg-gradient-to-t from-dlc-negro/90 via-transparent to-transparent opacity-0 transition-opacity duration-700 group-hover:opacity-100 group-focus-within:opacity-100" />
-
-          {/* Colapsada: número y título en vertical */}
-          <div className="absolute inset-0 flex items-center justify-center gap-4 transition-opacity duration-300 group-hover:opacity-0 group-focus-within:opacity-0 md:flex-col">
-            <span className="font-serif text-xs tabular-nums text-dlc-oro">{String(i + 1).padStart(2, "0")}</span>
-            <span className="whitespace-nowrap font-serif text-lg font-light tracking-[0.2em] text-dlc-marfil uppercase md:[writing-mode:vertical-rl] md:rotate-180">
-              {item.title}
-            </span>
-          </div>
-
-          {/* Abierta: contenido completo */}
-          <div className="absolute inset-x-0 bottom-0 p-6 opacity-0 transition-opacity duration-500 group-hover:opacity-100 group-hover:delay-200 group-focus-within:opacity-100 group-focus-within:delay-200 sm:p-10">
+    <ExpandingStrips
+      sizes="(min-width: 768px) 60vw, 100vw"
+      strips={items.map((item) => ({
+        key: item.id,
+        label: item.title,
+        image: item.image_url,
+        content: (
+          <>
             <p className="text-[11px] uppercase tracking-[0.5em] text-dlc-oro">{item.category}</p>
             <h3 className="mt-3 whitespace-nowrap font-serif text-3xl font-light text-dlc-marfil sm:text-5xl">
               {item.title}
@@ -62,9 +40,9 @@ export default function ExpandingGallery({ items }: { items: GaleriaItem[] }) {
                 Ver más
               </Link>
             )}
-          </div>
-        </li>
-      ))}
-    </ul>
+          </>
+        ),
+      }))}
+    />
   );
 }

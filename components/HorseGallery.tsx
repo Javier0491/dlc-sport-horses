@@ -4,16 +4,17 @@ import Image from "next/image";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { GallerySection } from "@/lib/catalog";
 import { isVideoUrl } from "@/lib/video";
+import ExpandingStrips from "./ExpandingStrips";
 
 // Galería de la ficha: foto principal (3:2, el caballo completo) y retrato, y
-// debajo las secciones desplegables («Primera Impresión», «Presencia»…). Con
-// ratón, una sección se abre al pasar por encima y se cierra al pasar a otra;
-// en pantallas táctiles se abre y cierra tocándola. Cualquier foto abre el
-// visor a pantalla completa (flechas, teclado ← → Esc, deslizar en móvil).
-// Las secciones pueden tener videos: se muestra su primer fotograma y se
+// debajo las secciones («Primera Impresión», «Presencia»…) como franjas que se
+// abren al pasar el cursor (o al tocarlas): su portada es la primera foto y,
+// abiertas, muestran el texto y las miniaturas. Cualquier foto abre el visor a
+// pantalla completa (flechas, teclado ← → Esc, deslizar en móvil). Las
+// secciones pueden tener videos: se muestra su primer fotograma y se
 // reproducen en el visor.
 
-const HOVER_DELAY_MS = 120; // evita abrir secciones al cruzarlas de pasada
+const MAX_MINIS = 6; // miniaturas por sección; el resto se ve en el visor
 
 function Thumb({
   src,
@@ -76,6 +77,31 @@ function Thumb({
   );
 }
 
+// Miniatura dentro de una franja abierta: abre el visor en esa foto o video.
+function Mini({ src, label, onOpen }: { src: string; label: string; onOpen: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onOpen}
+      aria-label={label}
+      className="relative block h-12 w-16 overflow-hidden ring-1 ring-dlc-marfil/20 transition-all hover:ring-2 hover:ring-dlc-oro sm:h-14 sm:w-20"
+    >
+      {isVideoUrl(src) ? (
+        <>
+          <video src={`${src}#t=0.1`} muted playsInline preload="metadata" className="h-full w-full object-cover" />
+          <span className="absolute inset-0 flex items-center justify-center bg-dlc-negro/30 text-dlc-marfil">
+            <svg viewBox="0 0 24 24" className="h-4 w-4" fill="currentColor" aria-hidden="true">
+              <path d="M8 5.5v13l10.5-6.5z" />
+            </svg>
+          </span>
+        </>
+      ) : (
+        <Image src={src} alt="" fill sizes="80px" className="object-cover" />
+      )}
+    </button>
+  );
+}
+
 // "4 fotos", "3 fotos · 1 video".
 function countLabel(items: string[]) {
   const videos = items.filter(isVideoUrl).length;
@@ -107,16 +133,6 @@ export default function HorseGallery({
   const dialog = useRef<HTMLDialogElement>(null);
   const [index, setIndex] = useState(0);
   const touchX = useRef<number | null>(null);
-  const [openKey, setOpenKey] = useState<string | null>(null);
-  const hoverTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const canHover = useRef(false);
-
-  useEffect(() => {
-    canHover.current = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
-    return () => {
-      if (hoverTimer.current) clearTimeout(hoverTimer.current);
-    };
-  }, []);
 
   const go = useCallback(
     (step: number) => setIndex((i) => (i + step + images.length) % images.length),
@@ -140,17 +156,6 @@ export default function HorseGallery({
     return () => el.removeEventListener("keydown", onKey);
   }, [go]);
 
-  const hoverOpen = (key: string) => {
-    if (!canHover.current) return;
-    if (hoverTimer.current) clearTimeout(hoverTimer.current);
-    hoverTimer.current = setTimeout(() => setOpenKey(key), HOVER_DELAY_MS);
-  };
-  const cancelHover = () => {
-    if (hoverTimer.current) clearTimeout(hoverTimer.current);
-  };
-  // Con ratón el clic solo abre (ya se abrió al pasar); en táctil abre y cierra.
-  const toggle = (key: string) =>
-    setOpenKey((current) => (current === key && !canHover.current ? null : key));
 
   if (images.length === 0) return null;
 
@@ -180,86 +185,67 @@ export default function HorseGallery({
       )}
 
       {sections.length > 0 && (
-        <ul className="mt-10 border-b border-dlc-oro/20" onMouseLeave={cancelHover}>
-          {sections.map((section, i) => {
-            const open = openKey === section.key;
-            const panelId = `galeria-${section.key}`;
-            return (
-              <li
-                key={section.key}
-                className="border-t border-dlc-oro/20"
-                onMouseEnter={() => hoverOpen(section.key)}
-                onMouseLeave={cancelHover}
-              >
-                <button
-                  type="button"
-                  onClick={() => toggle(section.key)}
-                  // Con teclado (Tab) se abre al enfocarla; con toque o clic decide onClick.
-                  onFocus={(e) => e.currentTarget.matches(":focus-visible") && setOpenKey(section.key)}
-                  aria-expanded={open}
-                  aria-controls={panelId}
-                  className="group flex w-full items-center gap-5 py-6 text-left sm:gap-8 sm:py-7"
-                >
-                  <span className="font-serif text-sm tabular-nums text-dlc-oro/70">
+        <div className="mt-10">
+          <ExpandingStrips
+            sizes="(min-width: 768px) 70vw, 100vw"
+            strips={sections.map((section, i) => ({
+              key: section.key,
+              label: section.label,
+              image: section.photos[0] ?? null,
+              content: (
+                <>
+                  <p className="text-[11px] uppercase tracking-[0.5em] text-dlc-oro">
                     {String(i + 1).padStart(2, "0")}
-                  </span>
-                  <span
-                    className={`flex-1 font-serif text-2xl font-light transition-colors duration-500 sm:text-4xl ${
-                      open ? "text-dlc-oro" : "text-dlc-marfil group-hover:text-dlc-oro"
-                    }`}
-                  >
+                    {section.photos.length > 0 && ` · ${countLabel(section.photos)}`}
+                  </p>
+                  <h3 className="mt-3 whitespace-nowrap font-serif text-3xl font-light text-dlc-marfil sm:text-5xl">
                     {section.label}
-                  </span>
-                  {section.photos.length > 0 && (
-                    <span className="hidden text-[10px] uppercase tracking-[0.35em] text-dlc-marfil/40 sm:inline">
-                      {countLabel(section.photos)}
-                    </span>
+                  </h3>
+                  <span className="mt-5 block h-px w-12 bg-dlc-oro" />
+                  {section.text && (
+                    <p className="mt-5 line-clamp-4 max-w-xl text-sm leading-7 text-dlc-marfil/80">
+                      {section.text}
+                    </p>
                   )}
-                  <span
-                    aria-hidden="true"
-                    className={`relative h-4 w-4 shrink-0 text-dlc-oro transition-transform duration-500 ${open ? "rotate-45" : ""}`}
-                  >
-                    <span className="absolute top-1/2 left-0 h-px w-full bg-current" />
-                    <span className="absolute top-0 left-1/2 h-full w-px bg-current" />
-                  </span>
-                </button>
-
-                {/* grid-rows 0fr → 1fr: se despliega con la altura real del contenido */}
-                <div
-                  id={panelId}
-                  role="region"
-                  aria-label={section.label}
-                  className={`grid transition-[grid-template-rows,opacity] duration-700 ease-out ${
-                    open ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
-                  }`}
-                >
-                  <div className="overflow-hidden" inert={!open}>
-                    <div className="pb-8">
-                      {section.text && (
-                        <p className="mb-6 max-w-3xl leading-8 text-dlc-marfil/75">{section.text}</p>
-                      )}
-                      {section.photos.length > 0 && (
-                        <ul className="grid grid-cols-2 gap-3 md:grid-cols-4">
-                          {section.photos.map((src, n) => (
-                            <li key={src}>
-                              <Thumb
-                                src={src}
-                                alt={`${name}, ${section.label}, ${isVideoUrl(src) ? "video" : "foto"} ${n + 1}`}
-                                sizes="(min-width: 768px) 25vw, 50vw"
-                                onOpen={() => openViewer(src)}
-                                className="aspect-[3/2]"
-                              />
-                            </li>
-                          ))}
-                        </ul>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </li>
-            );
-          })}
-        </ul>
+                  {section.photos.length > 0 && (
+                    <>
+                      <ul className="mt-6 flex flex-wrap gap-2">
+                        {section.photos.slice(0, MAX_MINIS).map((src, n) => (
+                          <li key={src}>
+                            <Mini
+                              src={src}
+                              label={`${isVideoUrl(src) ? "Ver video" : "Ampliar foto"} ${n + 1} de ${section.label}`}
+                              onOpen={() => openViewer(src)}
+                            />
+                          </li>
+                        ))}
+                        {section.photos.length > MAX_MINIS && (
+                          <li>
+                            <button
+                              type="button"
+                              onClick={() => openViewer(section.photos[MAX_MINIS])}
+                              aria-label={`Ver ${section.photos.length - MAX_MINIS} más de ${section.label}`}
+                              className="flex h-12 w-16 items-center justify-center border border-dlc-marfil/30 text-xs text-dlc-marfil/80 transition-colors hover:border-dlc-oro hover:text-dlc-oro sm:h-14 sm:w-20"
+                            >
+                              +{section.photos.length - MAX_MINIS}
+                            </button>
+                          </li>
+                        )}
+                      </ul>
+                      <button
+                        type="button"
+                        onClick={() => openViewer(section.photos[0])}
+                        className="press mt-7 inline-block bg-dlc-oro px-7 py-3 text-[11px] font-medium uppercase tracking-[0.3em] text-dlc-negro hover:bg-dlc-marfil"
+                      >
+                        Ver galería
+                      </button>
+                    </>
+                  )}
+                </>
+              ),
+            }))}
+          />
+        </div>
       )}
 
       <dialog
