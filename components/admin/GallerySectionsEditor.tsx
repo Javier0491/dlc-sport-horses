@@ -9,9 +9,16 @@ import { hintClass, inputClass } from "./form-styles";
 import GalleryEditor from "./GalleryEditor";
 
 // Secciones que admiten videos además de fotos (se comprimen antes de subir).
-const SECCIONES_CON_VIDEO: string[] = ["primera_impresion", "presencia", "potencial", "escenario"];
+const SECCIONES_CON_VIDEO: string[] = [
+  "primera_impresion",
+  "presencia",
+  "potencial",
+  "escenario",
+  "papa_resultados",
+  "mama_resultados",
+];
 
-// Las cuatro secciones desplegables de la galería de la ficha («Conoce a…»).
+// Las secciones desplegables de la galería de la ficha («Conoce a…»).
 // Cada una envía `galeria_<clave>` (JSON de URLs) y `galeria_<clave>_texto`.
 export default function GallerySectionsEditor({
   initial,

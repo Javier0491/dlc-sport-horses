@@ -17,7 +17,10 @@ export type Strip = {
 
 export default function ExpandingStrips({ strips, sizes }: { strips: Strip[]; sizes: string }) {
   return (
-    <ul className="flex h-[720px] w-full flex-col gap-2 md:h-[600px] md:flex-row">
+    // En móvil van apiladas: con más de 4, la columna crece para que la abierta quepa.
+    <ul
+      className={`flex w-full flex-col gap-2 md:h-[600px] md:flex-row ${strips.length > 4 ? "h-[900px]" : "h-[720px]"}`}
+    >
       {strips.map((strip, i) => (
         <li
           key={strip.key}

@@ -117,7 +117,7 @@ alter table public.caballos add column if not exists video_url text
   check (char_length(video_url) <= 500);
 
 -- Galería por secciones desplegables de la ficha (Primera Impresión, Presencia,
--- Potencial, Su escenario): { "presencia": { "texto": "…", "fotos": ["https://…"] } }.
+-- Potencial, Su escenario, Papá · Resultados, Mamá · Resultados): { "presencia": { "texto": "…", "fotos": ["https://…"] } }.
 alter table public.caballos add column if not exists galeria_secciones jsonb not null default '{}'::jsonb;
 
 create index if not exists caballos_categoria_activos_idx

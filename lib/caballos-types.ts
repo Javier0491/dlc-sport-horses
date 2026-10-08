@@ -60,6 +60,16 @@ export const SECCIONES_GALERIA = [
     label: "Su escenario",
     sugerencia: "En pista y en concursos: recorridos, premiaciones, competencias.",
   },
+  {
+    key: "papa_resultados",
+    label: "Papá · Resultados",
+    sugerencia: "Resultados del padre: recorridos, premiaciones y concursos en fotos o video.",
+  },
+  {
+    key: "mama_resultados",
+    label: "Mamá · Resultados",
+    sugerencia: "Resultados de la madre: recorridos, premiaciones y concursos en fotos o video.",
+  },
 ] as const;
 
 export type SeccionGaleriaKey = (typeof SECCIONES_GALERIA)[number]["key"];
