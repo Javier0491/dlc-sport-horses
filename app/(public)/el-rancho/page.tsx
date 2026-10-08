@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
+import ExpandingGallery from "@/components/ExpandingGallery";
 import Reveal from "@/components/Reveal";
 import { POR_DEFECTO } from "@/lib/contenido-types";
 import { getConfiguracion } from "@/lib/data";
@@ -84,6 +85,20 @@ export default async function ElRancho() {
               {parrafo}
             </Reveal>
           ))}
+        </div>
+      </section>
+
+      {/* Galería expansiva */}
+      <section className="bg-dlc-negro px-6 py-24 sm:py-32">
+        <div className="mx-auto max-w-7xl">
+          <div className="mb-14 flex flex-col items-center text-center">
+            <p className="text-[11px] uppercase tracking-[0.5em] text-dlc-oro">Galería</p>
+            <h2 className="mt-5 font-serif text-4xl font-light text-dlc-marfil sm:text-5xl">
+              Vida en La Chacona
+            </h2>
+            <span className="mt-7 h-px w-16 bg-dlc-oro" />
+          </div>
+          <ExpandingGallery />
         </div>
       </section>
 
