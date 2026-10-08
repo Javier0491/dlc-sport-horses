@@ -3,9 +3,10 @@
 import Link from "next/link";
 import { useState, useTransition } from "react";
 import { updateConfiguracion } from "@/app/(admin)/admin/actions";
-import { CAMPOS, type Configuracion, type Seccion } from "@/lib/contenido-types";
+import { CAMPOS, POR_DEFECTO, type Configuracion, type Seccion } from "@/lib/contenido-types";
 import { hintClass, inputClass, labelClass } from "./form-styles";
 import { useUploadCount } from "./DropArea";
+import ExpandingGalleryEditor from "./ExpandingGalleryEditor";
 import ImageUploadField from "./ImageUploadField";
 import VideoField from "./VideoField";
 
@@ -86,6 +87,16 @@ export default function ContentForm({
           label="Video"
           initial={values?.datos?.video_url ?? ""}
           hint={seccion.video}
+          onBusyChange={trackUpload}
+          onChange={() => setStatus({ kind: "idle" })}
+        />
+      )}
+
+      {seccion.galeria && (
+        <ExpandingGalleryEditor
+          // Sin guardar todavía: se parte de la galería que ya se ve en la web.
+          initial={values?.datos?.galeria ?? POR_DEFECTO.legado.galeria}
+          hint={seccion.galeria}
           onBusyChange={trackUpload}
           onChange={() => setStatus({ kind: "idle" })}
         />

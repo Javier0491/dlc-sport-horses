@@ -7,9 +7,22 @@ export type Configuracion = {
   subtitulo: string | null;
   descripcion: string | null;
   imagen_url: string | null;
-  datos: { video_url?: string | null } | null; // columna jsonb para extras (video de Eventos)
+  // Columna jsonb para extras: video de Eventos y galería expansiva de Nuestro Legado.
+  datos: { video_url?: string | null; galeria?: GaleriaItem[] } | null;
   updated_at: string | null;
 };
+
+// Una franja de la galería expansiva de El Rancho (components/ExpandingGallery.tsx).
+export type GaleriaItem = {
+  id: string;
+  title: string;
+  category: string;
+  image_url: string;
+  tags: string[];
+  href?: string; // botón «Ver más» (opcional)
+};
+
+export const GALERIA_LIMITES = { items: 8, title: 40, category: 40, tags: 4, tag: 24, href: 300 };
 
 export type Campo = "titulo" | "subtitulo" | "descripcion" | "imagen_url";
 
@@ -26,6 +39,7 @@ export type Seccion = {
   page: { href: string; name: string }; // dónde se ve en el sitio
   hints: Record<Campo, string>; // dónde aparece cada campo
   video?: string; // si existe, la sección tiene campo de video (se guarda en datos.video_url)
+  galeria?: string; // si existe, la sección tiene galería expansiva (se guarda en datos.galeria)
 };
 
 export const SECCIONES: Seccion[] = [
@@ -50,6 +64,8 @@ export const SECCIONES: Seccion[] = [
       descripcion: "Historia del rancho. Deja una línea en blanco para separar párrafos.",
       imagen_url: "Foto principal de la página El Rancho. Vacío = foto de La Chacona.",
     },
+    galeria:
+      "Galería «Vida en La Chacona» de la página El Rancho. Cada franja se abre al pasar el cursor. Sin franjas, la sección no aparece.",
   },
   {
     id: "eventos",
@@ -81,6 +97,55 @@ export const POR_DEFECTO = {
     descripcion:
       "En el corazón de Jalisco, la tradición ecuestre se vive con paciencia y respeto. Cada potro que nace en Rancho DLC recibe el mismo cuidado que nos enseñaron quienes vinieron antes: atención diaria, entrenamiento sin prisa y una pasión inquebrantable por el alto rendimiento.",
     imagen_url: "/rancho/la-chacona.jpg",
+    // Se muestra hasta que se guarde la galería en el panel por primera vez.
+    galeria: [
+      {
+        id: "la-chacona",
+        title: "La Chacona",
+        category: "El rancho",
+        image_url: "/rancho/la-chacona.jpg",
+        tags: ["Instalaciones", "Pistas", "Caballerizas"],
+        href: "/contacto",
+      },
+      {
+        id: "manada",
+        title: "La manada",
+        category: "En libertad",
+        image_url: "/rancho/manada.jpg",
+        tags: ["Potreros", "Crianza"],
+      },
+      {
+        id: "rio",
+        title: "El río",
+        category: "Paisaje",
+        image_url: "/rancho/rio.jpg",
+        tags: ["Naturaleza", "Paseos"],
+      },
+      {
+        id: "belcanto-dlc",
+        title: "Belcanto DLC",
+        category: "Potro",
+        image_url: "/caballos/belcanto-dlc.jpg",
+        tags: ["Conformación", "Salto"],
+        href: "/potros/belcanto-dlc",
+      },
+      {
+        id: "calisto-dlc",
+        title: "Calisto DLC",
+        category: "Potro",
+        image_url: "/caballos/calisto-dlc.jpg",
+        tags: ["Movimiento", "Presencia"],
+        href: "/potros/calisto-dlc",
+      },
+      {
+        id: "comanche-dlc",
+        title: "Comanche DLC",
+        category: "Potro",
+        image_url: "/caballos/comanche-dlc.jpg",
+        tags: ["Potencial", "Pista"],
+        href: "/potros/comanche-dlc",
+      },
+    ] satisfies GaleriaItem[] as GaleriaItem[],
   },
   eventos: {
     titulo: "Concursos",

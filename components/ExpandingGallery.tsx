@@ -1,70 +1,13 @@
 import Image from "next/image";
 import Link from "next/link";
+import type { GaleriaItem } from "@/lib/contenido-types";
 
 // Galería expansiva (acordeón de fotos): franjas oscuras con el título en
 // vertical; la que tiene el cursor (o el foco del teclado) se abre y muestra
 // título, categoría, etiquetas y botón. En móvil las franjas van apiladas.
+// Las franjas se editan en /admin/contenido → Nuestro Legado.
 
-export type ExpandingGalleryItem = {
-  id: string;
-  title: string;
-  category: string;
-  image_url: string;
-  tags: string[];
-  href?: string;
-};
-
-// Datos temporales para probar el efecto; luego vendrán del panel.
-export const GALERIA_TEMPORAL: ExpandingGalleryItem[] = [
-  {
-    id: "la-chacona",
-    title: "La Chacona",
-    category: "El rancho",
-    image_url: "/rancho/la-chacona.jpg",
-    tags: ["Instalaciones", "Pistas", "Caballerizas"],
-    href: "/contacto",
-  },
-  {
-    id: "manada",
-    title: "La manada",
-    category: "En libertad",
-    image_url: "/rancho/manada.jpg",
-    tags: ["Potreros", "Crianza"],
-  },
-  {
-    id: "rio",
-    title: "El río",
-    category: "Paisaje",
-    image_url: "/rancho/rio.jpg",
-    tags: ["Naturaleza", "Paseos"],
-  },
-  {
-    id: "belcanto-dlc",
-    title: "Belcanto DLC",
-    category: "Potro",
-    image_url: "/caballos/belcanto-dlc.jpg",
-    tags: ["Conformación", "Salto"],
-    href: "/potros/belcanto-dlc",
-  },
-  {
-    id: "calisto-dlc",
-    title: "Calisto DLC",
-    category: "Potro",
-    image_url: "/caballos/calisto-dlc.jpg",
-    tags: ["Movimiento", "Presencia"],
-    href: "/potros/calisto-dlc",
-  },
-  {
-    id: "comanche-dlc",
-    title: "Comanche DLC",
-    category: "Potro",
-    image_url: "/caballos/comanche-dlc.jpg",
-    tags: ["Potencial", "Pista"],
-    href: "/potros/comanche-dlc",
-  },
-];
-
-export default function ExpandingGallery({ items = GALERIA_TEMPORAL }: { items?: ExpandingGalleryItem[] }) {
+export default function ExpandingGallery({ items }: { items: GaleriaItem[] }) {
   return (
     <ul className="flex h-[720px] w-full flex-col gap-2 md:h-[600px] md:flex-row">
       {items.map((item, i) => (

@@ -19,6 +19,8 @@ async function getLegado() {
       legado?.imagen_url && isAllowedImageUrl(legado.imagen_url)
         ? legado.imagen_url
         : POR_DEFECTO.legado.imagen_url,
+    // Sin guardar en el panel = galería por defecto; guardada vacía = no se muestra.
+    galeria: legado?.datos?.galeria ?? POR_DEFECTO.legado.galeria,
   };
 }
 
@@ -28,7 +30,7 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function ElRancho() {
-  const { titulo, subtitulo, descripcion, imagen } = await getLegado();
+  const { titulo, subtitulo, descripcion, imagen, galeria } = await getLegado();
   // Una línea en blanco en el panel separa párrafos.
   const parrafos = descripcion.split(/\n\s*\n/).map((p) => p.trim()).filter(Boolean);
 
@@ -89,18 +91,20 @@ export default async function ElRancho() {
       </section>
 
       {/* Galería expansiva */}
-      <section className="bg-dlc-negro px-6 py-24 sm:py-32">
-        <div className="mx-auto max-w-7xl">
-          <div className="mb-14 flex flex-col items-center text-center">
-            <p className="text-[11px] uppercase tracking-[0.5em] text-dlc-oro">Galería</p>
-            <h2 className="mt-5 font-serif text-4xl font-light text-dlc-marfil sm:text-5xl">
-              Vida en La Chacona
-            </h2>
-            <span className="mt-7 h-px w-16 bg-dlc-oro" />
+      {galeria.length > 0 && (
+        <section className="bg-dlc-negro px-6 py-24 sm:py-32">
+          <div className="mx-auto max-w-7xl">
+            <div className="mb-14 flex flex-col items-center text-center">
+              <p className="text-[11px] uppercase tracking-[0.5em] text-dlc-oro">Galería</p>
+              <h2 className="mt-5 font-serif text-4xl font-light text-dlc-marfil sm:text-5xl">
+                Vida en La Chacona
+              </h2>
+              <span className="mt-7 h-px w-16 bg-dlc-oro" />
+            </div>
+            <ExpandingGallery items={galeria} />
           </div>
-          <ExpandingGallery />
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* CTA */}
       <section className="bg-dlc-cuero px-6 py-16 sm:py-20">
